@@ -1,0 +1,3 @@
+[submodule "micropython-touch"]
+	path = micropython-touch
+	url = https://github.com/peterhinch/micropython-touch.git
