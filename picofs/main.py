@@ -1,2 +1,7 @@
 # Quick test that this is working
-print('hello, world')
+from screens import start
+
+
+print("hello, world")
+
+start()
