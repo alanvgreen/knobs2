@@ -1,7 +1,7 @@
 import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen, Window, ssd
 from gui.core.writer import CWriter
-import gui.fonts.freesans20 as font
+import myfonts.poetsen_60 as title_font
 from gui.widgets import (
     Button,
     RadioButtons,
@@ -18,8 +18,8 @@ from gui.core.colors import GREEN, BLACK
 class BaseScreen(Screen):
     def __init__(self):
         super().__init__()
-        wri = CWriter(ssd, font, GREEN, BLACK, verbose=False)
-        Label(wri, 0, 0, "zero, zero")
+        wri = CWriter(ssd, title_font, GREEN, BLACK, verbose=False)
+        Label(wri, 0, 0, "Knobs")
 
 
 def start():
