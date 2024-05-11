@@ -2,5 +2,11 @@
 	path = micropython-touch
 	url = https://github.com/peterhinch/micropython-touch.git
 [submodule "picofs/micropython-font-to-py"]
-	path = picofs/micropython-font-to-py
+	path = micropython-font-to-py
 	url = https://github.com/peterhinch/micropython-font-to-py.git
+[submodule "micropython-font-to-py"]
+	path = micropython-font-to-py
+	url = https://github.com/peterhinch/micropython-font-to-py.git
+[submodule "micropython"]
+	path = micropython
+	url = https://github.com/micropython/micropython.git
