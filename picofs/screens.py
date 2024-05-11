@@ -1,7 +1,6 @@
 import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen, Window, ssd
 from gui.core.writer import CWriter
-import myfonts.poetsen_60 as title_font
 from gui.widgets import (
     Button,
     RadioButtons,
@@ -14,13 +13,12 @@ from gui.widgets import (
 
 from gui.core.colors import GREEN, BLACK
 
+from title import TitleScreen
 
-class BaseScreen(Screen):
-    def __init__(self):
-        super().__init__()
-        wri = CWriter(ssd, title_font, GREEN, BLACK, verbose=False)
-        Label(wri, 0, 0, "Knobs")
+
+class MainScreen(Screen):
+    pass
 
 
 def start():
-    Screen.change(BaseScreen)
+    Screen.change(TitleScreen, kwargs=dict(timeout=60, next_screen=MainScreen))
