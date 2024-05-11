@@ -1,7 +1,4 @@
 # Quick test that this is working
-from screens import start
+import app
 
-
-print("hello, world")
-
-start()
+app.start()

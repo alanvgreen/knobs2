@@ -26,7 +26,7 @@ from gui.core.tgui import Display  # noqa: E402
 # quiet()  # Comment this out for periodic free RAM messages
 
 # Touch configuration
-from touch.xpt2046 import XPT2046 # noqa: E402
+from touch.xpt2046 import XPT2046  # noqa: E402
 
 spi = SoftSPI(mosi=Pin(15), miso=Pin(12), sck=Pin(14))  # 2.5MHz max
 tpad = XPT2046(spi, Pin(13), ssd)
