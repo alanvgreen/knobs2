@@ -28,3 +28,11 @@ The font files in `freeze/myfonts` were created with the
 [micropython-font-to-py](https://github.com/peterhinch/micropython-font-to-py)
 utility. The derived font files are covered by licenses in the `licenses`
 directory.
+
+
+## Micropython Config
+
+Micropython is unchanged excepting that we enable the UART. This allows us to
+plug the Pico's USB cable into a PC (where the Pico provides a MIDI controller
+interface) and still use the Micropython REPL from a separate development host
+- an RPi 4.

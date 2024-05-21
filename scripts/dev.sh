@@ -7,5 +7,5 @@ WORKING_ROOT="$(git -C ${THIS_DIR} rev-parse --show-toplevel)"
 
 (
     cd ${WORKING_ROOT}/picofs
-    mpremote mount --unsafe-links . "$@"
+    mpremote connect /dev/serial0 mount --unsafe-links . "$@"
 )
