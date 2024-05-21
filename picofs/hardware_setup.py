@@ -8,7 +8,8 @@
 
 from machine import Pin, SoftSPI, SPI, freq
 import gc
-from drivers.ili93xx.ili9341 import ILI9341 as SSD
+#from drivers.ili93xx.ili9341 import ILI9341 as SSD
+from drivers.ili93xx.ili9341_2 import ILI9341_2 as SSD
 
 freq(250_000_000)  # RP2 overclock
 # Create and export an SSD instance
