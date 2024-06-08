@@ -1,6 +1,3 @@
-
-
-
 class Pot:
     # Handles processing for a Pot
     HYSTERESIS = 1 << 7
@@ -40,6 +37,5 @@ class PotHolder:
             cb(idx, cooked_value)
 
     def update(self, idx, raw_value):
-        #print("update", idx, raw_value)
+        # print("update", idx, raw_value)
         self._pots[idx].update_raw(raw_value)
-

@@ -16,14 +16,14 @@ BG_RESET_MS = 500
 class StatusScreen(Screen):
     """The main info screen shows the pot state."""
 
-    def __init__(self, pot_holder):
+    def __init__(self, pot_holder, settings_cb):
         super().__init__()
         self._knobs = []
         self._reset_ticks = []
         wri = CWriter(ssd, font, RED, YELLOW, verbose=False)
         self._build_knobs(wri)  # Populate self._knobs and _reset_ticks
 
-        Button(wri, 255, 5, height=50, width=80, text="Settings", bdcolor=RED)
+        Button(wri, 255, 5, height=50, width=80, text="Settings", callback=settings_cb)
 
         self.reg_task(self._bg_reset())
         pot_holder.add_callback(self._on_pot_changed)
@@ -56,7 +56,7 @@ class StatusScreen(Screen):
     def _on_pot_changed(self, idx, val):
         """Sets a value (0-127) into a knob"""
         self._knobs[idx].bgcolor = WHITE
-        self._knobs[idx].value(val/127)
+        self._knobs[idx].value(val / 127)
         self._reset_ticks[idx] = ticks_add(ticks_ms(), BG_RESET_MS)
 
     async def _bg_reset(self):
@@ -80,4 +80,3 @@ class StatusScreen(Screen):
                         self._reset_ticks[idx] = None
 
             await asyncio.sleep_ms(wait_ms)
-

@@ -21,7 +21,7 @@ async def twiddle(pot_holder):
     while True:
         for idx in range(18):
             await asyncio.sleep_ms(800)
-            #idx = random.randrange(18)
+            # idx = random.randrange(18)
             value = random.randrange(65536)
             pot_holder.update(idx, value)
 
@@ -50,7 +50,9 @@ def start():
 
     # Launch UI
     def go_status_screen():
-        Screen.change(StatusScreen, kwargs=dict(pot_holder=pot_holder))
+        Screen.change(
+            StatusScreen,
+            kwargs=dict(pot_holder=pot_holder, settings_cb=lambda: print("settings")),
+        )
 
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
-

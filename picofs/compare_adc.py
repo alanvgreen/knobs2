@@ -38,7 +38,7 @@ class AdcReader:
         start = time.ticks_ms()
         data = [self.read1() for _ in range(30)]
         end = time.ticks_ms()
-        ms = (end - start)/30
+        ms = (end - start) / 30
         print(f"{self.label():20} {ms:5.2f} {stddev(data):7.2f} {mean(data):10.2f}")
 
 

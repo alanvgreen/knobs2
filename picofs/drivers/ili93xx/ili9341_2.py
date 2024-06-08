@@ -14,6 +14,7 @@ from . import ili9341
 import asyncio
 import _thread
 
+
 class ILI9341_2(ili9341.ILI9341):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,9 +24,9 @@ class ILI9341_2(ili9341.ILI9341):
         def show_and_signal_done():
             self.show()
             self._do_refresh_done = True
+
         async with self._lock:
             self._do_refresh_done = False
             _thread.start_new_thread(show_and_signal_done, ())
             while not self._do_refresh_done:
                 await asyncio.sleep_ms(10)
-
