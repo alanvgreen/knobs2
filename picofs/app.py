@@ -1,25 +1,56 @@
 import asyncio
 import random
 
+import usb.device
+from usb.device.midi import MIDIInterface
+
 import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
+from controller import Config, Controller
 from title import TitleScreen
 from info import InfoScreen
 import pots
 
 
-def start():
-    pot_holder = pots.PotHolder()
-    async def twiddle():
-        for i in range(100):
-            await asyncio.sleep_ms(200)
-            idx = random.randrange(18)
-            value = random.randrange(pots.Pot.DENOMINATOR)
+async def twiddle(pot_holder):
+    """Randomly twiddle the pot values
+
+    For testing and debugging
+    """
+    while True:
+        for idx in range(18):
+            await asyncio.sleep_ms(800)
+            #idx = random.randrange(18)
+            value = random.randrange(65536)
             pot_holder.update(idx, value)
 
-    asyncio.create_task(twiddle())
 
-    Screen.change(TitleScreen, kwargs=dict(timeout_ms=300))
-    Screen.change(InfoScreen, kwargs=dict(pot_holder=pot_holder))
+def get_midi():
+    m = MIDIInterface()
+    usb.device.get().init(
+        m,
+        manufacturer_str="Alan Green",
+        product_str="knobs but no sliders",
+        serial_str="0001 A plural-alpha first",
+    )
+    return m
+
+
+def start():
+    pot_holder = pots.PotHolder()
+
+    # Init MIDI USB
+    midi = get_midi()
+    config = Config()
+    controller = Controller(pot_holder, config, midi)
+
+    # Start pot holder update
+    asyncio.create_task(twiddle(pot_holder))
+
+    # Launch UI
+    def go_info_screen():
+        Screen.change(InfoScreen, kwargs=dict(pot_holder=pot_holder))
+
+    Screen.change(TitleScreen, kwargs=dict(timeout_ms=300, exit_cb=go_info_screen))
 

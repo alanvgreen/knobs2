@@ -39,14 +39,14 @@ class TitleWidget(Widget):
 
 
 class TitleScreen(Screen):
-    def __init__(self, timeout_ms: int):
+    def __init__(self, timeout_ms: int, exit_cb):
         super().__init__()
         wri = CWriter(ssd, title_font, YELLOW, BLACK, verbose=False)
-        TitleWidget(wri, lambda: Screen.back())
+        TitleWidget(wri, exit_cb)
 
-        async def next_on_timeout():
+        async def cb_on_timeout():
             await asyncio.sleep_ms(timeout_ms)
             if Screen.current_screen == self:
-                Screen.back()
+                exit_cb()
 
-        asyncio.create_task(next_on_timeout())
+        asyncio.create_task(cb_on_timeout())

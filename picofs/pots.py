@@ -2,20 +2,13 @@
 
 
 class Pot:
-    """Handles processing for a Pot"""
-    # TODO:
-    # - calibration
-
-    DENOMINATOR = 4096 * 256
-    HYSTERESIS = DENOMINATOR // 256
+    # Handles processing for a Pot
+    HYSTERESIS = 1 << 7
 
     def __init__(self, idx, callback):
         self.idx = idx
-        self._raw = 0
+        self._raw = 0  # 16 bit value
         self._callback = callback
-
-    def add_callback(self, cb):
-        self._callbacks.append(cb)
 
     @property
     def cooked(self):
@@ -25,13 +18,14 @@ class Pot:
         return self._raw >> 9
 
     def update_raw(self, new_value):
+        """Update with 16 bit new_value"""
         if abs(self._raw - new_value) >= self.HYSTERESIS:
             self._raw = new_value
             self._callback(self.idx, self.cooked)
 
 
 class PotHolder:
-    """Holds 18 pot values."""
+    # Holds 18 pot values.
     NPOTS = 18
 
     def __init__(self):
@@ -46,6 +40,6 @@ class PotHolder:
             cb(idx, cooked_value)
 
     def update(self, idx, raw_value):
-        print("update", idx, raw_value)
+        #print("update", idx, raw_value)
         self._pots[idx].update_raw(raw_value)
 
