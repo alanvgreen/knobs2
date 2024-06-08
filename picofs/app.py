@@ -52,7 +52,7 @@ def start():
     def go_status_screen():
         Screen.change(
             StatusScreen,
-            kwargs=dict(pot_holder=pot_holder, settings_cb=lambda: print("settings")),
+            kwargs=dict(pot_holder=pot_holder, settings_cb=lambda _: print("settings")),
         )
 
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
