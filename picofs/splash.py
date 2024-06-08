@@ -1,4 +1,4 @@
-# Title screen
+# Splash screen
 # Shows on startup and then is covered by the main screen
 import asyncio
 
@@ -11,7 +11,7 @@ import myfonts.poetsen_30 as sub_font
 import myfonts.poppins_semi_15 as content_font
 
 
-class TitleWidget(Widget):
+class SplashWidget(Widget):
     def __init__(self, wri: CWriter, cb):
         super().__init__(wri, 4, 4, 312, 232, YELLOW, BLACK, RED, active=True)
         self._cb = cb
@@ -38,11 +38,11 @@ class TitleWidget(Widget):
             self._cb()
 
 
-class TitleScreen(Screen):
+class SplashScreen(Screen):
     def __init__(self, timeout_ms: int, exit_cb):
         super().__init__()
         wri = CWriter(ssd, title_font, YELLOW, BLACK, verbose=False)
-        TitleWidget(wri, exit_cb)
+        SplashWidget(wri, exit_cb)
 
         async def cb_on_timeout():
             await asyncio.sleep_ms(timeout_ms)

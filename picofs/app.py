@@ -8,8 +8,8 @@ import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
 from controller import Config, Controller
-from title import TitleScreen
-from info import InfoScreen
+from splash import SplashScreen
+from status import StatusScreen
 import pots
 
 
@@ -49,8 +49,8 @@ def start():
     asyncio.create_task(twiddle(pot_holder))
 
     # Launch UI
-    def go_info_screen():
-        Screen.change(InfoScreen, kwargs=dict(pot_holder=pot_holder))
+    def go_status_screen():
+        Screen.change(StatusScreen, kwargs=dict(pot_holder=pot_holder))
 
-    Screen.change(TitleScreen, kwargs=dict(timeout_ms=300, exit_cb=go_info_screen))
+    Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
 

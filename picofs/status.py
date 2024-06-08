@@ -8,13 +8,11 @@ from gui.widgets.knob import Knob, TWOPI
 
 import myfonts.poppins_semi_15 as font
 
-from title import TitleScreen
-
 
 BG_RESET_MS = 500
 
 
-class InfoScreen(Screen):
+class StatusScreen(Screen):
     """The main info screen shows the pot state."""
 
     def __init__(self, pot_holder):
