@@ -73,7 +73,7 @@ class StatusScreen(Screen):
                     d = ticks_diff(self._reset_ticks[idx], now)
                     if d > 0:
                         # There will be a reset in future
-                        wait_ms = max(wait_ms, d)
+                        wait_ms = min(wait_ms, d)
                     else:
                         # Reset scheduled for past - do reset now
                         self._knobs[idx].bgcolor = BLACK
