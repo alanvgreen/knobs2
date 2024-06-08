@@ -8,6 +8,7 @@ import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
 from controller import Config, Controller
+from settings import SettingsScreen
 from splash import SplashScreen
 from status import StatusScreen
 import pots
@@ -49,10 +50,14 @@ def start():
     asyncio.create_task(twiddle(pot_holder))
 
     # Launch UI
+
+    def go_settings_screen(_):
+        Screen.change(SettingsScreen)
+
     def go_status_screen():
         Screen.change(
             StatusScreen,
-            kwargs=dict(pot_holder=pot_holder, settings_cb=lambda _: print("settings")),
+            kwargs=dict(pot_holder=pot_holder, settings_cb=go_settings_screen),
         )
 
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
