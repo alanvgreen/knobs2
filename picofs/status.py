@@ -4,6 +4,7 @@ from time import ticks_ms, ticks_add, ticks_diff
 from gui.core.colors import GREEN, YELLOW, WHITE, BLACK, RED
 from gui.core.tgui import Screen, ssd
 from gui.core.writer import CWriter
+from gui.widgets.buttons import Button
 from gui.widgets.knob import Knob, TWOPI
 
 import myfonts.poppins_semi_15 as font
@@ -19,10 +20,11 @@ class StatusScreen(Screen):
         super().__init__()
         self._knobs = []
         self._reset_ticks = []
-        wri = CWriter(ssd, font, GREEN, BLACK, verbose=False) # sets initial colors
-        print("building started")
+        wri = CWriter(ssd, font, RED, YELLOW, verbose=False)
         self._build_knobs(wri)  # Populate self._knobs and _reset_ticks
-        print("building done")
+
+        Button(wri, 255, 5, height=50, width=80, text="Settings", bdcolor=RED)
+
         self.reg_task(self._bg_reset())
         pot_holder.add_callback(self._on_pot_changed)
 
@@ -47,27 +49,24 @@ class StatusScreen(Screen):
 
         for y in range(4):
             for x in range(4):
-                knob(row=5+ 60 * y, col=5 + 60 * x, height=50)
-        knob(row=245, col=45, height=70)
-        knob(row=245, col=125, height=70)
+                knob(row=5 + 60 * y, col=5 + 60 * x, height=50)
+        knob(row=250, col=95, height=60)
+        knob(row=250, col=170, height=60)
 
     def _on_pot_changed(self, idx, val):
         """Sets a value (0-127) into a knob"""
-        self._knobs[idx].value(val/127)
         self._knobs[idx].bgcolor = WHITE
+        self._knobs[idx].value(val/127)
         self._reset_ticks[idx] = ticks_add(ticks_ms(), BG_RESET_MS)
 
     async def _bg_reset(self):
-        await asyncio.sleep_ms(2)
+        # Reset background color after a time.
         wait_ms = BG_RESET_MS
         while True:
-            # Wait an appropriate time
-            print(f"sleep {wait_ms}")
-            await asyncio.sleep_ms(wait_ms)
-            wait_ms = BG_RESET_MS
             now = ticks_ms()
+            wait_ms = BG_RESET_MS
 
-            # Check every reset
+            # Check whether each knob will (or does) need a reset
             for idx in range(len(self._reset_ticks)):
                 if self._reset_ticks[idx] is not None:
                     d = ticks_diff(self._reset_ticks[idx], now)
@@ -79,4 +78,6 @@ class StatusScreen(Screen):
                         self._knobs[idx].bgcolor = BLACK
                         self._knobs[idx].draw = True
                         self._reset_ticks[idx] = None
+
+            await asyncio.sleep_ms(wait_ms)
 
