@@ -36,6 +36,9 @@ class PotHolder:
         for cb in self._callbacks:
             cb(idx, cooked_value)
 
+    def get_values(self):
+        return [p.cooked for p in self._pots]
+
     def update(self, idx, raw_value):
         # idx is 0-17
         # raw_value is in range 0-65535

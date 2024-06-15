@@ -23,15 +23,16 @@ class StatusScreen(Screen):
         self._knobs = []
         self._reset_ticks = []
         wri = CWriter(ssd, font, RED, YELLOW, verbose=False)
-        self._build_knobs(wri)  # Populate self._knobs and _reset_ticks
+        self._build_knobs(wri, pot_holder.get_values())  
 
         Button(wri, 255, 5, height=50, width=80, text="Settings", callback=settings_cb)
 
         self.reg_task(self._highlight_reset())
         pot_holder.add_callback(self._on_pot_changed)
 
-    def _build_knobs(self, wri):
-        def knob(row, col, height):
+    def _build_knobs(self, wri, init_values):
+        # Populate _knobs and _reset_ticks for all knobs
+        def knob(row, col, height, val):
             k = Knob(
                 row=row,
                 col=col,
@@ -39,7 +40,7 @@ class StatusScreen(Screen):
                 writer=wri,
                 arc=TWOPI * 0.75,
                 ticks=9,
-                value=0.0,
+                value=(val / 127.0),
                 active=False,
                 fgcolor=RED,
                 color=NORMAL_COLOR,
@@ -49,15 +50,15 @@ class StatusScreen(Screen):
             self._knobs.append(k)
             self._reset_ticks.append(None)
 
-        for y in range(4):
-            for x in range(4):
-                knob(row=5 + 60 * y, col=5 + 60 * x, height=50)
-        knob(row=250, col=95, height=60)
-        knob(row=250, col=170, height=60)
+        for i in range(16):
+            x, y = i % 4, i // 4
+            knob(row=5 + 60 * y, col=5 + 60 * x, height=50, val=init_values[i])
+        knob(row=250, col=95, height=60, val=init_values[16])
+        knob(row=250, col=170, height=60, val=init_values[17])
 
     def _on_pot_changed(self, idx, val):
         """Sets a value (0-127) into a knob"""
-        self._knobs[idx].value(val / 127)
+        self._knobs[idx].value(val / 127.0)
         self._knobs[idx].color = HIGHLIGHT_COLOR
         self._reset_ticks[idx] = ticks_add(ticks_ms(), HIGHLIGHT_RESET_MS)
 
