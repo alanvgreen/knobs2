@@ -13,8 +13,6 @@ class PotReader:
 
     async def read_one(self, idx):
         """Reads the value of a single pot, 0-17"""
-        # Want to do a thousand readings per second
-        await asyncio.sleep_ms(1)
         if idx < 16:
             # adc 0 and multiplexer
             return self._adcs[0].read_u16()
@@ -26,6 +24,7 @@ class PotReader:
 
     async def loop(self):
         while True:
+            await asyncio.sleep_ms(10)
             for idx in range(18):
                 value = await self.read_one(idx)
                 self._pot_holder.update(idx, value)

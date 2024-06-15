@@ -7,18 +7,24 @@ class Pot:
         self._raw = 0  # 16 bit value
         self._callback = callback
 
-    @property
-    def cooked(self):
+    def cook(self, val):
         # A value between 0 and 127
         # TODO: needs some more work to calibrate
         # TODO: dead zones near the ends?
-        return self._raw >> 9
+        return val >> 9
+
+    @property
+    def cooked(self):
+        return self.cook(self._raw)
 
     def update_raw(self, new_value):
         """Update with 16 bit new_value"""
-        if abs(self._raw - new_value) >= self.HYSTERESIS:
-            self._raw = new_value
-            self._callback(self.idx, self.cooked)
+        raw_changed = abs(self._raw - new_value) >= self.HYSTERESIS
+        if raw_changed:
+            cooked_changed = self.cooked != self.cook(new_value)
+            if cooked_changed:
+                self._raw = new_value
+                self._callback(self.idx, self.cooked)
 
 
 class PotHolder:
