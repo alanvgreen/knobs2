@@ -1,48 +1,62 @@
 import json
 import os
 
-_FNAME = "config.json"
+_FNAME = "cfg.json"
 
 
 class Config:
-    def __init__(self):
-        self.data = {}
-        self.dirty = False
+    def __init__(self, fname):
+        self._data = None
+        self._dirty = False
+        self._fname = fname
+        self.maybe_read()
 
-    def read(self, fname=_FNAME):
+    def maybe_read(self):
+        if self._data is not None:
+            return
         try:
-            os.stat(fname)
+            os.stat(_FNAME)
         except:
-            self.write(fname, True)
+            self._data = {}
+            return
 
-        with open(fname, "r") as f:
-            self.data = json.load(f)
+        print(f"reading config from {self._fname}")
+        with open(self._fname, "r") as f:
+            self._data = json.load(f) or {}
 
     def reset(self):
-        self.data = {}
+        self._data = {}
         self.write(force=True)
 
-    def write(self, fname=_FNAME, force=False):
-        print("write")
-        if not force and not self.dirty:
+    def write(self, force=False):
+        do_it = self._dirty or force
+        if not do_it:
             return
-        with open(fname, "w") as f:
-            self.data = json.dump(self.data, f)
-        self.dirty = False
+        
+        print(f"writing config to {self._fname}")
+        with open(self._fname, "w") as f:
+            json.dump(self._data, f)
+        self._dirty = False
 
     def get_channels(self):
         """List of 5 channels (0-15), the first four of which are unique"""
-        d = self.data.get("channels", [0, 0, 0, 0, 0])
-        used = set()
-        for i in range(4):
-            while d[i] in used:
-                d[i] = (d[i] + 1) % 16
-            used.add(d[i])
-        return d[i]
+        d = self._data.setdefault("channels", [0, 1, 2, 3, 0])
+        return d
 
-    def set_channels(self, channels):
-        self.data["channels"] = channels
-        self.dirty = True
+    def set_channel(self, group_idx, new_value):
+        # Save old value and set new value
+        clist = self.get_channels()
+        old_value = clist[group_idx]
+        clist[group_idx] = new_value
+        self._dirty = True
+
+        # For the groups that must be unique, fix any clashing value
+        if group_idx > 3:
+            return
+        for g in range(4):
+            if g != group_idx:
+                if clist[g] == new_value:
+                    clist[g] = old_value
 
 
-CONFIG = Config()
+CONFIG = Config(_FNAME)

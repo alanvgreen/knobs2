@@ -14,9 +14,9 @@ class Controller:
     def _get_channel_cc(self, idx):
         # Given a pot index (0-17), get channel and cc - default to channel zero
         # See https://anotherproducer.com/online-tools-for-musicians/midi-cc-list/
-        channel = CONFIG.get_channels()
         if idx < 16:
             cc = 16 + (idx % 4)
         else:
             cc = 12 + (idx % 4)
+        channel = CONFIG.get_channels()[idx // 4]
         return channel, cc
