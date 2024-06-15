@@ -10,7 +10,9 @@ from gui.widgets.knob import Knob, TWOPI
 import myfonts.poppins_semi_15 as font
 
 
-BG_RESET_MS = 500
+HIGHLIGHT_RESET_MS = 500
+NORMAL_COLOR = YELLOW
+HIGHLIGHT_COLOR = WHITE
 
 
 class StatusScreen(Screen):
@@ -25,7 +27,7 @@ class StatusScreen(Screen):
 
         Button(wri, 255, 5, height=50, width=80, text="Settings", callback=settings_cb)
 
-        self.reg_task(self._bg_reset())
+        self.reg_task(self._highlight_reset())
         pot_holder.add_callback(self._on_pot_changed)
 
     def _build_knobs(self, wri):
@@ -40,7 +42,7 @@ class StatusScreen(Screen):
                 value=0.0,
                 active=False,
                 fgcolor=RED,
-                color=YELLOW,
+                color=NORMAL_COLOR,
                 bgcolor=BLACK,
                 bdcolor=False,
             )
@@ -55,16 +57,16 @@ class StatusScreen(Screen):
 
     def _on_pot_changed(self, idx, val):
         """Sets a value (0-127) into a knob"""
-        self._knobs[idx].bgcolor = WHITE
         self._knobs[idx].value(val / 127)
-        self._reset_ticks[idx] = ticks_add(ticks_ms(), BG_RESET_MS)
+        self._knobs[idx].color = HIGHLIGHT_COLOR
+        self._reset_ticks[idx] = ticks_add(ticks_ms(), HIGHLIGHT_RESET_MS)
 
-    async def _bg_reset(self):
+    async def _highlight_reset(self):
         # Reset background color after a time.
-        wait_ms = BG_RESET_MS
+        wait_ms = HIGHLIGHT_RESET_MS
         while True:
             now = ticks_ms()
-            wait_ms = BG_RESET_MS
+            wait_ms = HIGHLIGHT_RESET_MS
 
             # Check whether each knob will (or does) need a reset
             for idx in range(len(self._reset_ticks)):
@@ -75,7 +77,7 @@ class StatusScreen(Screen):
                         wait_ms = min(wait_ms, d)
                     else:
                         # Reset scheduled for past - do reset now
-                        self._knobs[idx].bgcolor = BLACK
+                        self._knobs[idx].color = NORMAL_COLOR
                         self._knobs[idx].draw = True
                         self._reset_ticks[idx] = None
 

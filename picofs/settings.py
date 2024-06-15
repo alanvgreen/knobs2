@@ -26,8 +26,8 @@ class ChannelButton(Button):
             width=24,
             fgcolor=WHITE,
             bgcolor=BLACK,
+            text=text,
         )
-        self.value(text)
 
 
 

@@ -9,7 +9,8 @@ import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
 import adc, pots
-from controller import Config, Controller
+from config import Config
+from controller import Controller
 from settings import SettingsScreen
 from splash import SplashScreen
 from status import StatusScreen
