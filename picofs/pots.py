@@ -37,5 +37,7 @@ class PotHolder:
             cb(idx, cooked_value)
 
     def update(self, idx, raw_value):
+        # idx is 0-17
+        # raw_value is in range 0-65535
         # print("update", idx, raw_value)
         self._pots[idx].update_raw(raw_value)

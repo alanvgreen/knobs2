@@ -1,17 +1,18 @@
 import asyncio
 import random
 
+from machine import Pin
 import usb.device
 from usb.device.midi import MIDIInterface
 
 import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
-from controller import Controller
+import adc, pots
+from controller import Config, Controller
 from settings import SettingsScreen
 from splash import SplashScreen
 from status import StatusScreen
-import pots
 
 
 async def twiddle(pot_holder):
@@ -39,17 +40,21 @@ def get_midi():
 
 
 def start():
+    led = Pin(8, Pin.OUT)
+    led.value(1)
+
     pot_holder = pots.PotHolder()
+    pot_reader = adc.PotReader(pot_holder)
 
     # Init MIDI USB
     midi = get_midi()
     controller = Controller(pot_holder, midi)
 
     # Start pot holder update
-    asyncio.create_task(twiddle(pot_holder))
+    #asyncio.create_task(twiddle(pot_holder))
+    asyncio.create_task(pot_reader.loop())
 
     # Launch UI
-
     def go_settings_screen(_):
         Screen.change(SettingsScreen)
 
@@ -60,4 +65,5 @@ def start():
         )
 
     go_settings_screen(None)
+    print("Launch")
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
