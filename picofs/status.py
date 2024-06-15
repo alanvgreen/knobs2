@@ -23,7 +23,7 @@ class StatusScreen(Screen):
         self._knobs = []
         self._reset_ticks = []
         wri = CWriter(ssd, font, RED, YELLOW, verbose=False)
-        self._build_knobs(wri, pot_holder.get_values())  
+        self._build_knobs(wri, pot_holder.get_values())
 
         Button(wri, 255, 5, height=50, width=80, text="Settings", callback=settings_cb)
 

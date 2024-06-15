@@ -32,7 +32,7 @@ class Config:
         do_it = self._dirty or force
         if not do_it:
             return
-        
+
         print(f"writing config to {self._fname}")
         with open(self._fname, "w") as f:
             json.dump(self._data, f)
