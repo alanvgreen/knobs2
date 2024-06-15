@@ -31,8 +31,14 @@ class Config:
         self.dirty = False
 
     def get_channels(self):
-        """List of 5 channels (0-15 or None)"""
-        return self.data.get("channels", [None] * 5)
+        """List of 5 channels (0-15), the first four of which are unique"""
+        d = self.data.get("channels", [0, 0, 0, 0, 0])
+        used = set()
+        for i in range(4):
+            while d[i] in used:
+                d[i] = (d[i] + 1) % 16
+            used.add(d[i])
+        return d[i]
 
     def set_channels(self, channels):
         self.data["channels"] = channels

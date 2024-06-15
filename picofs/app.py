@@ -7,7 +7,7 @@ from usb.device.midi import MIDIInterface
 import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
-from controller import Config, Controller
+from controller import Controller
 from settings import SettingsScreen
 from splash import SplashScreen
 from status import StatusScreen
@@ -43,8 +43,7 @@ def start():
 
     # Init MIDI USB
     midi = get_midi()
-    config = Config()
-    controller = Controller(pot_holder, config, midi)
+    controller = Controller(pot_holder, midi)
 
     # Start pot holder update
     asyncio.create_task(twiddle(pot_holder))
@@ -60,4 +59,5 @@ def start():
             kwargs=dict(pot_holder=pot_holder, settings_cb=go_settings_screen),
         )
 
+    go_settings_screen(None)
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
