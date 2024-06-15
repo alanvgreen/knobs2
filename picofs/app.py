@@ -9,7 +9,6 @@ import hardware_setup  # Create a display instance
 from gui.core.tgui import Screen
 
 import adc, pots
-from config import Config
 from controller import Controller
 from settings import SettingsScreen
 from splash import SplashScreen
@@ -45,14 +44,13 @@ def start():
     led.value(1)
 
     pot_holder = pots.PotHolder()
-    pot_reader = adc.PotReader(pot_holder)
 
-    # Init MIDI USB
+    # Connect midi controller to the pot holder
     midi = get_midi()
     controller = Controller(pot_holder, midi)
 
-    # Start pot holder update
-    #asyncio.create_task(twiddle(pot_holder))
+    # Hook up reader to the holder to start updates
+    pot_reader = adc.PotReader(pot_holder)
     asyncio.create_task(pot_reader.loop())
 
     # Launch UI
@@ -65,6 +63,5 @@ def start():
             kwargs=dict(pot_holder=pot_holder, settings_cb=go_settings_screen),
         )
 
-    go_settings_screen(None)
     print("Launch")
     Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
