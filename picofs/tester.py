@@ -1,5 +1,6 @@
 import machine
 import time
+from machine import mem32
 from rp2 import DMA
 from uctypes import addressof
 from periph import ADCRegisters
@@ -67,8 +68,8 @@ def adc_to_buf():
     buf_b = mk_buf(0)
 
     # prep this one channel - set pins up etc
-    adc0 = machine.ADC(26)
-    adc0.read_u16()
+    adc1 = machine.ADC(27)
+    adc1.read_u16()
 
     d = DMA()
 
@@ -104,9 +105,65 @@ def adc_to_buf():
     print(f"{buf_b.hex()=}")
 
 
+DMA_BASE = 0x50000000
+SNIFF_CTRL = DMA_BASE + 0x434
+SNIFF_DATA = DMA_BASE + 0x438
+
+def init_dma_sniff(channel):
+    mem32[SNIFF_DATA] = 0
+    mem32[SNIFF_CTRL] = 1 | (channel << 1) | (0xf << 5)
+
+def read_dma_sniff():
+    return mem32[SNIFF_DATA]
+
+
+def adc_to_sum():
+    adc_regs = ADCRegisters()
+    buf = bytearray(4)
+
+    # prep this one channel - set pins up etc
+    adc1 = machine.ADC(27)
+    adc1.read_u16()
+
+    d = DMA()
+
+    d.read = adc_regs.get_fifo_addr()
+    d.write = addressof(buf)
+    d.count = 16 * 256
+    dreq_adc = 36
+    d.ctrl = d.pack_ctrl(
+            irq_quiet = False,
+            inc_read=False,
+            inc_write=False,
+            treq_sel=dreq_adc,
+            sniff_en=True)
+    done = set_dma_done(d)
+
+    init_dma_sniff(d.channel)
+
+    print("before trigger")
+    print(f"{buf.hex()=} {read_dma_sniff()=:6x}")
+
+    start = time.ticks_ms()
+    adc_regs.prepare()
+    d.active(True)
+
+    l = d.count
+    adc_regs.start()
+    while not done[0]:
+        time.sleep_ms(1)
+    adc_regs.stop()
+    end = time.ticks_ms()
+    print(f"{end-start=}")
+
+
+    print("=====")
+    print("after trigger")
+    print(f"{buf.hex()=}, {read_dma_sniff()=:6x}")
+    print(f"{buf.hex()=}, {read_dma_sniff()=:6d}")
 
 def run():
     print("hello")
     #buf_to_buf()
-    adc_to_buf()
-    adc_to_buf()
+    #adc_to_buf()
+    adc_to_sum()
