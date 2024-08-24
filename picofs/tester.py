@@ -1,8 +1,29 @@
+import machine
+import time
 from rp2 import DMA
 from uctypes import addressof
+from periph import ADCRegisters
 
 BLEN = 64
 
+#    ctrl = {
+#        "ahb_err": 0, # read only
+#        "read_err": 0, # read + write to clear
+#        "write_err": 0, # read + write to clear
+#        "busy": 0, # read only
+#        "sniff_en": 0,
+#        "bswap": 0,
+#        "irq_quiet": 0,
+#        "treq_sel": 0x3f, # 3f is unpaced
+#        "chain_to": d.channel,
+#        "ring_sel": 0,
+#        "ring_size": 0, # No ring
+#        "inc_write": 1,
+#        "inc_read": 1,
+#        "size": 2, # 0 = byte, 2 = word
+#        "high_pri": 0,
+#        "enable": 1,
+#    }
 
 def mk_buf(val):
     buf = bytearray(BLEN)
@@ -11,37 +32,81 @@ def mk_buf(val):
     return buf
 
 
+def set_dma_done(dma):
+    done_holder = [False]
+    def dma_irq_handler(d):
+        done_holder[0] = True
+    dma.irq(handler=dma_irq_handler)
+    return done_holder
+    
+
 def buf_to_buf():
     buf_a = mk_buf(0x81)
     buf_b = mk_buf(0)
-    print(f"{buf_a.hex()=}")
-    print(f"{buf_b.hex()=}")
 
     d = DMA()
     d.read = addressof(buf_a)
     d.write = addressof(buf_b)
     d.count = BLEN // 4
-    ctrl = {
-        "inc_read": 0,
-        "high_pri": 0,
-        "write_err": 0,
-        "ring_sel": 0,
-        "enable": 0,
-        "treq_sel": 0,
-        "sniff_en": 0,
-        "irq_quiet": 0,
-        "read_err": 0,
-        "chain_to": 0,
-        "busy": 0,
-        "inc_write": 0,
-        "ring_size": 0,
-        "bswap": 0,
-        "size": 0,
-        "ahb_err": 0,
-    }
-    d.ctrl = DMA.pack(ctrl)
+    d.ctrl = d.pack_ctrl(irq_quiet = False)
+    print("before trigger")
+    print(f"{buf_a.hex()=}")
+    print(f"{buf_b.hex()=}")
+    done = set_dma_done(d)
+    d.active(True)
+    while not done[0]:
+        print("---")
+    print("=====")
+    print("after trigger")
+    print(f"{buf_a.hex()=}")
+    print(f"{buf_b.hex()=}")
+
+
+def adc_to_buf():
+    adc_regs = ADCRegisters()
+    buf_b = mk_buf(0)
+
+    # prep this one channel - set pins up etc
+    adc0 = machine.ADC(26)
+    adc0.read_u16()
+
+    d = DMA()
+
+    d.read = adc_regs.get_fifo_addr()
+    d.write = addressof(buf_b)
+    d.count = BLEN // 4
+    dreq_adc = 36
+    d.ctrl = d.pack_ctrl(
+            irq_quiet = False,
+            inc_read=False,
+            treq_sel=dreq_adc)
+    done = set_dma_done(d)
+
+    print("before trigger")
+    print(f"{buf_b.hex()=}")
+
+    start = time.ticks_ms()
+    adc_regs.prepare()
+    d.active(True)
+
+    l = d.count
+    adc_regs.start()
+    while not done[0]:
+        time.sleep_ms(1)
+        #print(f"{d.count=} {hex(adc_regs.cs)=} {buf_b.hex()=}")
+    adc_regs.stop()
+    end = time.ticks_ms()
+    print(f"{end-start=}")
+
+
+    print("=====")
+    print("after trigger")
+    print(f"{buf_b.hex()=}")
+
 
 
 def run():
     print("hello")
-    buf_to_buf()
+    #buf_to_buf()
+    adc_to_buf()
+    adc_to_buf()
