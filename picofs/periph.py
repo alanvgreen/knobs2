@@ -44,11 +44,11 @@ class ADCRegisters(PeripheralRegisters):
     def fcs(self):
         return self.get(ADC_FCS)
 
-    def prepare(self):
+    def prepare(self, chan):
         self.stop()
-        # ensure ADC 1 is selected
+        # ensure ADC channel is selected
         self.bclr(ADC_CS, 7 << 17)
-        self.bset(ADC_CS, 1 << 17)
+        self.bset(ADC_CS, chan << 17)
 
         # Set threshold, dreq_en and en as recommended
         thresh = 1 << 24
@@ -75,6 +75,8 @@ class ADCRegisters(PeripheralRegisters):
 
 
 """
+From RP2040 datasheet:
+
 The RP2040 DMA (Section 2.5) can fetch ADC samples from the sample FIFO, by performing a normal memory-mapped
 read on the FIFO register, paced by the ADC_DREQ system data request signal. The following must be considered:
     • The sample FIFO must be enabled (FCS.EN) so that samples are written to it; the FIFO is disabled by default so

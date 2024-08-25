@@ -1,6 +1,6 @@
 class Pot:
     # Handles processing for a Pot
-    HYSTERESIS = 1 << 7
+    HYSTERESIS = 1 << 8 # requires a full step of change
 
     def __init__(self, idx, callback):
         self.idx = idx

@@ -87,7 +87,7 @@ def adc_to_buf():
     print(f"{buf_b.hex()=}")
 
     start = time.ticks_ms()
-    adc_regs.prepare()
+    adc_regs.prepare(1)
     d.active(True)
 
     l = d.count
@@ -145,7 +145,7 @@ def adc_to_sum():
     print(f"{buf.hex()=} {read_dma_sniff()=:6x}")
 
     start = time.ticks_ms()
-    adc_regs.prepare()
+    adc_regs.prepare(1)
     d.active(True)
 
     l = d.count
@@ -165,5 +165,5 @@ def adc_to_sum():
 def run():
     print("hello")
     #buf_to_buf()
-    #adc_to_buf()
+    adc_to_buf()
     adc_to_sum()

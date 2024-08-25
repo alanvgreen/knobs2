@@ -2,6 +2,8 @@ from config import CONFIG
 
 
 class Controller:
+    # TODO: send initial + regular "syncs" to update control values
+    # Maybe every five seconds or so?
     # Sends MIDI messages as pots update
     def __init__(self, pot_holder, midi):
         pot_holder.add_callback(self._on_pot_changed)
