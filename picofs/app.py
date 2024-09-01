@@ -39,10 +39,16 @@ def get_midi():
     return m
 
 
-def start():
-    led = Pin(8, Pin.OUT)
-    led.value(1)
+def turn_screen_backlight_on():
+    backlight = Pin(8, Pin.OUT)
+    backlight.value(1)
 
+def start():
+    # Minimal check of hardware
+    #Screen.change(SplashScreen, kwargs=dict(timeout_ms=3000, exit_cb=lambda: print('done')))
+    #return
+
+    turn_screen_backlight_on()
     pot_holder = pots.PotHolder()
 
     # Connect midi controller to the pot holder
