@@ -80,7 +80,7 @@ class PotReader:
         self._adc_regs.start()
         while self._dma.active():
             # replace with wake-up callback
-            await asyncio.sleep_ms(1)
+            await asyncio.sleep_ms(0)
         self._adc_regs.stop()
         return read_dma_sniff()
 
@@ -110,3 +110,5 @@ class PotReader:
             for idx in range(18):
                 value = await self.read_one(idx)
                 self._pot_holder.update(idx, value)
+                # Give other things a chance to run
+                await asyncio.sleep_ms(1)
