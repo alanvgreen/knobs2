@@ -93,13 +93,11 @@ class PotReader:
             self._sel[2].value(idx & 4)
             self._sel[3].value(idx & 8)
             self._inhibit.value(0)
-            #val = await self.read_adc_channel(0)
-            val = self._adcs[0].read_u16()
+            val = await self.read_adc_channel(0)
             self._inhibit.value(1)
             return val
         elif idx < 18:
             # read channel one or two
-            return self._adcs[idx-15].read_u16()
             return await self.read_adc_channel(idx-15)
         else:
             print(f"invalid index {idx}")

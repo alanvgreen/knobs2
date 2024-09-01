@@ -47,8 +47,8 @@ class ADCRegisters(PeripheralRegisters):
     def prepare(self, chan):
         self.stop()
         # ensure ADC channel is selected
-        self.bclr(ADC_CS, 7 << 17)
-        self.bset(ADC_CS, chan << 17)
+        self.bclr(ADC_CS, 7 << 12)
+        self.bset(ADC_CS, chan << 12)
 
         # Set threshold, dreq_en and en as recommended
         thresh = 1 << 24
@@ -69,6 +69,10 @@ class ADCRegisters(PeripheralRegisters):
         empty = 1 << 8
         while not (self.get(ADC_FCS) & empty):
             self.get(ADC_FIFO)
+
+        # Disable FIFO
+        en = 1 << 0
+        self.bclr(ADC_FCS, en)
 
     def get_fifo_addr(self):
         return self._base + ADC_FIFO
