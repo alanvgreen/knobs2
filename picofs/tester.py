@@ -5,6 +5,8 @@ from rp2 import DMA
 from uctypes import addressof
 from periph import ADCRegisters
 
+import test_pio
+
 BLEN = 64
 
 #    ctrl = {
@@ -165,5 +167,6 @@ def adc_to_sum():
 def run():
     print("hello")
     #buf_to_buf()
-    adc_to_buf()
-    adc_to_sum()
+    #adc_to_buf()
+    #adc_to_sum()
+    test_pio.run()

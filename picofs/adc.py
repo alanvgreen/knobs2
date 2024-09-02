@@ -42,7 +42,7 @@ def init_dma_channel(addr):
     d.count = DMA_COUNT
     dreq_adc = 36
     d.ctrl = d.pack_ctrl(
-            irq_quiet = False,
+            irq_quiet = True,
             inc_read=False,
             inc_write=False,
             treq_sel=dreq_adc,
