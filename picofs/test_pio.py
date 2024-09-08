@@ -1,6 +1,8 @@
 import random
 import rp2
 from rp2 import PIO
+from machine import Pin
+
 
 
 @rp2.asm_pio(autopull=True, autopush=True)
@@ -235,20 +237,20 @@ def run_pp_clut():
         buf_in[i] = k
     buf_out = bytearray(n * 4 * 4)
 
-    #    pp_dma = rp2.DMA()
-    #    ctrl_bits = pp_dma.pack_ctrl(
-    #        inc_read=False,
-    #        inc_write=False,
-    #        # need to be super careful about how this is driven
-    #        # dreq must go on slower component, but if that is the transmitter, then
-    #        # data must 100% be read at dreq time
-    #        # Would be easy to get de-synchronised, I guess
-    #        treq_sel=5,  # PIO 0, State machine 1, TX (input of PIO)
-    #    )
-    #    pp_dma.config(read=sm0, write=sm1, count=(n * 3) //2, ctrl=ctrl_bits)
-    #    pp_dma.active(1)
+    pp_dma = rp2.DMA()
+    ctrl_bits = pp_dma.pack_ctrl(
+        inc_read=False,
+        inc_write=False,
+        # need to be super careful about how this is driven
+        # dreq must go on slower component, but if that is the transmitter, then
+        # data must 100% be read at dreq time
+        # Would be easy to get de-synchronised, I guess
+        treq_sel=5,  # PIO 0, State machine 1, TX (input of PIO)
+    )
+    pp_dma.config(read=sm0, write=sm1, count=(n * 3) //2, ctrl=ctrl_bits)
     sm0.active(1)
     sm1.active(1)
+    pp_dma.active(1)
 
     for i in range(n):
         print(i)
@@ -262,37 +264,136 @@ def run_pp_clut():
         print(f"{bf(inp)=}")
         sm0.put(inp)
 
-        # hardcode move from here to there
-        tmp = sm0.get()
-        print(f"{bf(tmp)=}")
-        sm1.put(tmp)
-        if i % 2 == 1:
-            tmp = sm0.get()
-            print(f"{bf(tmp)=}")
-            sm1.put(tmp)
+        def sm1fetch(n):
+            print(f"sm1fetch({n})")
+            while not sm1.rx_fifo(): pass
+            val = sm1.get()
+            print(f"{n:3}: {bf(val)=}")
+            buf_out[n + 0] = val
+            buf_out[n + 1] = val >> 8
+            buf_out[n + 2] = val >> 16
+            buf_out[n + 3] = val >> 24
 
-#        def sm1fetch(n):
-#            val = sm1.get()
-#            print(f"{n:3}: {bf(val)=}")
-#            buf_out[n + 0] = val
-#            buf_out[n + 1] = val >> 8
-#            buf_out[n + 2] = val >> 16
-#            buf_out[n + 3] = val >> 24
-#
-#        sm1fetch(i*16)
-#        sm1fetch(i*16+4)
-#        sm1fetch(i*16+8)
-#        sm1fetch(i*16+12)
+        sm1fetch(i*16)
+        sm1fetch(i*16+4)
+        sm1fetch(i*16+8)
+        sm1fetch(i*16+12)
 
-    #    pp_dma.active(0)
+    pp_dma.active(0)
     sm0.active(0)
     sm1.active(0)
+    print("done")
 
+
+@rp2.asm_pio(set_init=rp2.PIO.OUT_LOW)
+def p_blink_1hz():
+    # Cycles: 1 + 7 + 32 * (30 + 1) = 1000
+    set(pins, 1)
+    set(x, 31)                  [6]
+    label("delay_high")
+    nop()                       [29]
+    jmp(x_dec, "delay_high")
+
+    # Cycles: 1 + 7 + 32 * (30 + 1) = 1000
+    set(pins, 0)
+    set(x, 31)                  [6]
+    label("delay_low")
+    nop()                       [29]
+    jmp(x_dec, "delay_low")
+
+
+def run_blink_1hz():
+    # Create and start a StateMachine with blink_1hz, outputting on Pin(25)
+    sm = rp2.StateMachine(0, p_blink_1hz, freq=4000, set_base=Pin(25))
+    sm.active(1)
+
+
+@rp2.asm_pio(
+    autopull=True,
+    autopush=True,
+    out_shiftdir=PIO.SHIFT_RIGHT,
+    in_shiftdir=PIO.SHIFT_RIGHT,
+)
+def p_clut():
+    # For each 4 bits, expand to 16
+    out(x, 1) # Get color LSB
+
+    out(y, 1) # R 5 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+
+    out(y, 1) # G 6 bits
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+
+    out(y, 1) # R 5 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+
+def run_clut():
+    print("\np clut")
+    sm0 = rp2.StateMachine(0, p_clut)
+    n = 8
+    buf_in = bytearray(n * 4)
+    for i in range(len(buf_in)):
+        buf_in[i] = random.getrandbits(8)
+
+    sm0.active(1)
+    for i in range(n):
+        inp = (
+            buf_in[i * 4 + 0]
+            + (buf_in[i * 4 + 1] << 8)
+            + (buf_in[i * 4 + 2] << 16)
+            + (buf_in[i * 4 + 3] << 24)
+        )
+
+        print(f"{i:2}: {bf(inp)=}")
+        sm0.put(inp)
+        for j in range(4):
+            print(f"  {j}: {bf(sm0.get())=}")
+    sm0.active(0)
+
+@rp2.asm_pio(
+    autopull=True,
+    autopush=True,
+    out_shiftdir=PIO.SHIFT_RIGHT,
+    in_shiftdir=PIO.SHIFT_RIGHT,
+)
+def p_fake():
+    # For each 4 bits, expand to 16
+    out(x, 4)
+    in_(null, 16) # Get color LSB
+
+def run_fake():
+    print("\nrun clut 1")
+    sm = rp2.StateMachine(0, p_fake)
+    inp = 0x0
+    sm.active(1)
+    sm.put(inp)
+    print(f"in:  {bf(inp)=}")
+    print(f"out: {bf(sm.get())=}")
+    print(f"out: {bf(sm.get())=}")
+    print(f"out: {bf(sm.get())=}")
+    print(f"out: {bf(sm.get())=}")
+    sm.active(0)
 
 def run():
     # double_bits()
     # invert_bits()
-    # double_invert_bits()
+    #double_invert_bits()
     #run_pp_clut()
     #run_pp_clut_0()
-    run_pp_clut_1()
+    #run_pp_clut_1()
+    #run_blink_1hz()
+    #run_fake()
+    run_clut()
