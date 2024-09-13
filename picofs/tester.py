@@ -173,7 +173,7 @@ def test_clut():
     import hardware_setup
     from clut_pio import ClutPio
     import random
-    clut_0 = ClutPio(None)
+    clut_0 = ClutPio(None, None)
     for i in range(4):
         inp = random.getrandbits(32)
         outp = clut_0.expand(inp)
@@ -183,7 +183,7 @@ def test_clut():
 def run():
     print("hello")
     #test_clut()
+    test_pio.run()
     #buf_to_buf()
     #adc_to_buf()
     #adc_to_sum()
-    test_pio.run()

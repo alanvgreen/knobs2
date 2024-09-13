@@ -1,49 +1,85 @@
 # A Color Lookup table implemented in a PIO
 import rp2
-import hardware_setup as hs
-
 
 @rp2.asm_pio(
     autopull=True,
-    autopush=True,
+    autopush=False,
     out_shiftdir=rp2.PIO.SHIFT_RIGHT,
-    in_shiftdir=rp2.PIO.SHIFT_RIGHT,
-    push_thresh=8,
+    in_shiftdir=rp2.PIO.SHIFT_LEFT,
 )
-def p_clut():
+def p_clut_b():
     # For each 4 bits, expand to 16
-    out(x, 1)  # Get color LSB
+    out(x, 1) # Get color LSB
 
-    out(y, 1)  # R 5 bits
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-
-    out(y, 1)  # G 6 bits
-    in_(x, 1)
+    out(y, 1) # B 5 bits
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
 
-    out(y, 1)  # R 5 bits
+    out(y, 1) # G 6 bits
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
+    push()
+    #in_(null, 24) # Fill ISR, force push
     in_(x, 1)
     in_(y, 1)
+    in_(x, 1)
 
-# TODO: begin by writing to memory using the linebufs
+    out(y, 1) # R 5 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    push()
+    #in_(null, 24) # Fill ISR, force push
 
 class ClutPio:
     """Color lookup table implemented with a PIO."""
-    def __init__(self, mvb):
+    def __init__(self, mvb, spi):
         self.mvb = mvb
-        self.sm0 = rp2.StateMachine(0, p_clut)
+        self.sm0 = rp2.StateMachine(0, p_clut_b)
+
+    def manual_write_read(self, buf_in, buf_out, count):
+        # count is in bytes
         self.sm0.active(1)
+        for i in range(0, count, 4):
+            inp = ((buf_in[i + 0] << 0)
+                   +(buf_in[i + 1] << 8)
+                   +(buf_in[i + 2] << 16)
+                   +(buf_in[i + 3] << 24))
+            self.sm0.put(inp)
+            base = i * 4
+            for j in range(16):
+                buf_out[i+j] = self.sm0.get()
+        self.sm0.active(0)
+
+    def expand(self, val):
+        inb = bytearray(4)
+        inb[0] = val 
+        inb[1] = (val >> 8) 
+        inb[2] = (val >> 16) 
+        inb[3] = (val >> 24) 
+        outb = bytearray(16)
+        self.manual_write_read(inb, outb, 4)
+        return outb
+
+
+
+#    def run(self):
+#        self.dma_null.active(1)
+#        self.dma_out.active(1)
+#        self.dma_in.active(1)
+#        while self.dma_null.active():
+#            pass
+#        self.dma_in.active(0)
+#        self.dma_out.active(0)
+#        self.dma_null.active(0)
+#
+
 
 #        # Set up dma "in" (mem to pio)
 #        words_in = len(mvb) // 4
@@ -65,7 +101,7 @@ class ClutPio:
 #            treq_sel=16, # SPI0 TX
 #            size=0, # bytes
 #        )
-#        self.dma_out.config(read=self.sm0, write=hs.display_spi, count=bytes_out, ctrl=ctrl_bits)
+#        self.dma_out.config(read=self.sm0, write=spi, count=bytes_out, ctrl=ctrl_bits)
 #
 #        # Set up DMA to ignore SPI RX
 #        dev_null = bytearray(4)
@@ -76,18 +112,4 @@ class ClutPio:
 #            treq_sel=17, # SPI0 RX
 #            size=0, # bytes
 #        )
-#        self.dma_null.config(read=hs.display_spi, write=dev_null, count=bytes_out, ctrl=ctrl_bits)
-#
-    def expand(self, inp):
-        self.sm0.put(inp)
-        return bytearray(self.sm0.get() for _ in range(16))
-
-    def run(self):
-        self.dma_null.active(1)
-        self.dma_out.active(1)
-        self.dma_in.active(1)
-        while self.dma_null.active():
-            pass
-        self.dma_in.active(0)
-        self.dma_out.active(0)
-        self.dma_null.active(0)
+#        self.dma_null.config(read=spi, write=dev_null, count=bytes_out, ctrl=ctrl_bits)

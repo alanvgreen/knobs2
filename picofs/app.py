@@ -64,6 +64,7 @@ def start():
         Screen.change(SettingsScreen)
 
     def go_status_screen():
+        print("status")
         Screen.change(
             StatusScreen,
             kwargs=dict(pot_holder=pot_holder, settings_cb=go_settings_screen),
