@@ -21,7 +21,6 @@ class ILI9341_3(ili9341.ILI9341):
         super().__init__(*args, **kwargs)
         self._do_refresh_done = False
         self._clut_pio = ClutPio(self._mvb)
-        self._linebuf = None # hacky, but fine
 
     def show(self):
         wd = self.width // 2
@@ -36,8 +35,18 @@ class ILI9341_3(ili9341.ILI9341):
         self._wcmd(b"\x2c")  # WRITE_RAM
         self._dc(1)
         self._cs(0)
-        self._clut_pio.run()
+
+        buf = self._mvb
+        for n in range(0, len(buf), 4):
+            inp = ((buf[n + 0]) << 0
+                   +(buf[n + 1]) << 8
+                   +(buf[n + 2]) << 16
+                   +(buf[n + 3]) << 24)
+            lb = self._clut_pio.expand(inp)
+            self._spi.write(lb)
+
         self._cs(1)
+        self._dc(0)
 
     async def do_refresh(self, split=4):
         def show_and_signal_done():

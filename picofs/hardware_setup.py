@@ -23,6 +23,8 @@ gc.collect()  # Precaution before instantiating framebuf
 ssd = SSD(spi, pcs, pdc, prst, height=320, width=240, usd=True)  # 320h x 240w
 # ssd = SSD(spi, pcs, pdc, prst, height=240, width=320, usd=False)  # 240x320 default
 
+display_spi = spi
+
 from gui.core.tgui import Display  # noqa: E402
 
 # from gui.core.tgui import quiet # noqa: E402

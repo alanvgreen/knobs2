@@ -164,8 +164,25 @@ def adc_to_sum():
     print(f"{buf.hex()=}, {read_dma_sniff()=:6x}")
     print(f"{buf.hex()=}, {read_dma_sniff()=:6d}")
 
+def repr_ba(ba):
+    vals = [f"{val:08b}" for val in ba]
+    groups = ["_".join(vals[n:n+4]) for n in range(0, len(vals), 4)]
+    return " ".join(groups)
+
+def test_clut():
+    import hardware_setup
+    from clut_pio import ClutPio
+    import random
+    clut_0 = ClutPio(None)
+    for i in range(4):
+        inp = random.getrandbits(32)
+        outp = clut_0.expand(inp)
+        print(f"{i:2} in:  {inp:032b}")
+        print(f"   out: {repr_ba(outp)}")
+
 def run():
     print("hello")
+    #test_clut()
     #buf_to_buf()
     #adc_to_buf()
     #adc_to_sum()

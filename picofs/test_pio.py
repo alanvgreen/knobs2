@@ -387,7 +387,67 @@ def run_fake():
     print(f"out: {bf(sm.get())=}")
     sm.active(0)
 
+@rp2.asm_pio(
+    autopull=True,
+    autopush=False,
+    out_shiftdir=PIO.SHIFT_RIGHT,
+    in_shiftdir=PIO.SHIFT_LEFT,
+)
+def p_clut_b():
+    # For each 4 bits, expand to 16
+    out(x, 1) # Get color LSB
+
+    out(y, 1) # B 5 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+
+    out(y, 1) # G 6 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    push()
+    #in_(null, 24) # Fill ISR, force push
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+
+    out(y, 1) # R 5 bits
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    in_(x, 1)
+    in_(y, 1)
+    push()
+    #in_(null, 24) # Fill ISR, force push
+
+def run_clut_b():
+    print("\np clut b")
+    sm0 = rp2.StateMachine(0, p_clut_b)
+    n = 2
+    buf_in = bytearray(n * 4)
+    for i in range(len(buf_in)):
+        buf_in[i] = ((i*2+1) << 4) + (i * 2) #random.getrandbits(8)
+
+    sm0.active(1)
+    for i in range(n):
+        inp = (
+            buf_in[i * 4 + 0]
+            + (buf_in[i * 4 + 1] << 8)
+            + (buf_in[i * 4 + 2] << 16)
+            + (buf_in[i * 4 + 3] << 24)
+        )
+
+        print(f"{i:2}: {bf(inp)=}")
+        sm0.put(inp)
+        for j in range(16):
+            print(f"  {j}: {bf(sm0.get())=}")
+    sm0.active(0)
+
 def run():
+    run_clut_b()
     # double_bits()
     # invert_bits()
     #double_invert_bits()
@@ -396,4 +456,4 @@ def run():
     #run_pp_clut_1()
     #run_blink_1hz()
     #run_fake()
-    run_clut()
+    #run_clut()
