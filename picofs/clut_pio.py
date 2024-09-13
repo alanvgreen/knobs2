@@ -54,7 +54,7 @@ class ClutPio:
             self.sm0.put(inp)
             base = i * 4
             for j in range(16):
-                buf_out[i+j] = self.sm0.get()
+                buf_out[base+j] = self.sm0.get()
         self.sm0.active(0)
 
     def expand(self, val):
