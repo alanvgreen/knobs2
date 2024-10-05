@@ -40,14 +40,12 @@ class ILI9341_3(ili9341.ILI9341):
         self._wcmd(b"\x2c")  # WRITE_RAM
         self._dc(1)
         self._cs(0)
-        print(f"{any(buf)=}")
         for start in range(0, wd * ht, wd):  # For each line
             #_lcopy(lb, buf[start:], clut, wd)  # Copy and map colors
             self._clut_pio.manual_write_read(buf[start:], lb, wd)
             self._spi.write(lb)
+        #self._clut_pio.run()
         self._cs(1)
-
-#        #self._clut_pio.run()
 #        
 #        for n in range(0, len(buf), 4):
 #            inp = ((buf[n + 0]) << 0

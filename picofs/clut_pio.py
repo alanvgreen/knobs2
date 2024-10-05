@@ -4,7 +4,7 @@ import rp2
 @rp2.asm_pio(
     autopull=True,
     autopush=False,
-    out_shiftdir=rp2.PIO.SHIFT_RIGHT,
+    out_shiftdir=rp2.PIO.SHIFT_LEFT,
     in_shiftdir=rp2.PIO.SHIFT_LEFT,
 )
 def p_clut_b():
@@ -37,20 +37,63 @@ def p_clut_b():
     push()
     #in_(null, 24) # Fill ISR, force push
 
+
 class ClutPio:
     """Color lookup table implemented with a PIO."""
     def __init__(self, mvb, spi):
         self.mvb = mvb
         self.sm0 = rp2.StateMachine(0, p_clut_b)
 
+        # Set up dma "in" (mem to pio)
+        words_in = len(mvb) // 4
+        self.dma_in = rp2.DMA()
+        ctrl_bits = self.dma_in.pack_ctrl(
+            inc_read=True,
+            inc_write=False,
+            treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
+            bswap=True,  # So least significant byte is left most
+        )
+        self.dma_in.config(read=mvb, write=self.sm0, count=words_in, ctrl=ctrl_bits)
+
+        # TODO: pump SPI TX clock + bit directly?
+
+        # Set up dma "out" (pio to spi 0)
+        bytes_out = len(mvb) * 4
+        print(f"{len(mvb)=} {words_in=} {bytes_out=}")
+        self.dma_out = rp2.DMA()
+        ctrl_bits = self.dma_out.pack_ctrl(
+            inc_read=False,
+            inc_write=False,
+            treq_sel=16, # SPI0 TX
+            size=0, # bytes
+        )
+        self.dma_out.config(read=self.sm0, write=spi, count=bytes_out, ctrl=ctrl_bits)
+
+        # Set up DMA to ignore SPI RX
+        dev_null = bytearray(4)
+        self.dma_null = rp2.DMA()
+        ctrl_bits = self.dma_null.pack_ctrl(
+            inc_read=False,
+            inc_write=False,
+            treq_sel=17, # SPI0 RX
+            size=0, # bytes
+        )
+        self.dma_null.config(read=spi, write=dev_null, count=bytes_out, ctrl=ctrl_bits)
+
     def manual_write_read(self, buf_in, buf_out, count):
         # count is in bytes
         self.sm0.active(1)
+#        for i in range(count):
+#            self.sm0.put(buf_in[i] << 24)
+#            base = i * 4
+#            for j in range(4):
+#                buf_out[base+j] = self.sm0.get()
+
         for i in range(0, count, 4):
-            inp = ((buf_in[i + 0] << 0)
-                   +(buf_in[i + 1] << 8)
-                   +(buf_in[i + 2] << 16)
-                   +(buf_in[i + 3] << 24))
+            inp = ((buf_in[i + 0] << 24)
+                   +(buf_in[i + 1] << 16)
+                   +(buf_in[i + 2] << 8)
+                   +(buf_in[i + 3] << 0))
             self.sm0.put(inp)
             base = i * 4
             for j in range(16):
@@ -67,49 +110,15 @@ class ClutPio:
         self.manual_write_read(inb, outb, 4)
         return outb
 
+    def run(self):
+        self.dma_null.active(1)
+        self.dma_out.active(1)
+        self.dma_in.active(1)
+        while self.dma_null.active():
+            pass
+        self.dma_in.active(0)
+        self.dma_out.active(0)
+        self.dma_null.active(0)
 
 
-#    def run(self):
-#        self.dma_null.active(1)
-#        self.dma_out.active(1)
-#        self.dma_in.active(1)
-#        while self.dma_null.active():
-#            pass
-#        self.dma_in.active(0)
-#        self.dma_out.active(0)
-#        self.dma_null.active(0)
-#
 
-
-#        # Set up dma "in" (mem to pio)
-#        words_in = len(mvb) // 4
-#        self.dma_in = rp2.DMA()
-#        ctrl_bits = self.dma_in.pack_ctrl(
-#            inc_read=True,
-#            inc_write=False,
-#            treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
-#        )
-#        self.dma_in.config(read=mvb, write=self.sm0, count=words_in, ctrl=ctrl_bits)
-#
-#        # Set up dma "out" (pio to spi 0)
-#        bytes_out = len(mvb) * 4
-#        print(f"{len(mvb)=} {words_in=} {bytes_out=}")
-#        self.dma_out = rp2.DMA()
-#        ctrl_bits = self.dma_out.pack_ctrl(
-#            inc_read=False,
-#            inc_write=False,
-#            treq_sel=16, # SPI0 TX
-#            size=0, # bytes
-#        )
-#        self.dma_out.config(read=self.sm0, write=spi, count=bytes_out, ctrl=ctrl_bits)
-#
-#        # Set up DMA to ignore SPI RX
-#        dev_null = bytearray(4)
-#        self.dma_null = rp2.DMA()
-#        ctrl_bits = self.dma_null.pack_ctrl(
-#            inc_read=False,
-#            inc_write=False,
-#            treq_sel=17, # SPI0 RX
-#            size=0, # bytes
-#        )
-#        self.dma_null.config(read=spi, write=dev_null, count=bytes_out, ctrl=ctrl_bits)

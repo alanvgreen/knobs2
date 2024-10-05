@@ -71,4 +71,4 @@ def start():
         )
 
     print("Launch")
-    Screen.change(SplashScreen, kwargs=dict(timeout_ms=300, exit_cb=go_status_screen))
+    Screen.change(SplashScreen, kwargs=dict(timeout_ms=300_000, exit_cb=go_status_screen))
