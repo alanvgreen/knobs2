@@ -1,7 +1,6 @@
 # Settings page
 from config import CONFIG
 
-from gui.core.colors import GREEN, YELLOW, WHITE, BLACK, RED
 from gui.core.writer import CWriter
 from gui.core.tgui import Screen, ssd
 from gui.widgets.buttons import Button, CloseButton
@@ -14,6 +13,7 @@ import myfonts.poppins_bold_30 as title_font
 LIST_SIXTEEN = [str(i + 1) for i in range(16)]
 # LIST_SIXTEEN = ["1", "2", "3"]
 
+from colors import GREEN, YELLOW, WHITE, BLACK, RED
 
 class ChannelButton(Button):
     # Kind of a radio button

@@ -4,12 +4,12 @@ import asyncio
 
 from gui.core.tgui import Screen, Widget, ssd, display
 from gui.core.writer import CWriter
-from gui.core.colors import GREEN, YELLOW, WHITE, BLACK, RED
 
 import myfonts.poetsen_70 as title_font
 import myfonts.poetsen_30 as sub_font
 import myfonts.poppins_semi_15 as content_font
 
+from colors import GREEN, YELLOW, WHITE, BLACK, RED
 
 class SplashWidget(Widget):
     def __init__(self, wri: CWriter, cb):

@@ -1,7 +1,6 @@
 import asyncio
 from time import ticks_ms, ticks_add, ticks_diff
 
-from gui.core.colors import GREEN, YELLOW, WHITE, BLACK, RED
 from gui.core.tgui import Screen, ssd
 from gui.core.writer import CWriter
 from gui.widgets.buttons import Button
@@ -9,6 +8,7 @@ from gui.widgets.knob import Knob, TWOPI
 
 import myfonts.poppins_semi_15 as font
 
+from colors import GREEN, YELLOW, WHITE, BLACK, RED
 
 HIGHLIGHT_RESET_MS = 500
 NORMAL_COLOR = YELLOW

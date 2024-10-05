@@ -61,6 +61,7 @@ def start():
 
     # Launch UI
     def go_settings_screen(_):
+        print("settings")
         Screen.change(SettingsScreen)
 
     def go_status_screen():
@@ -70,5 +71,5 @@ def start():
             kwargs=dict(pot_holder=pot_holder, settings_cb=go_settings_screen),
         )
 
-    print("Launch")
-    Screen.change(SplashScreen, kwargs=dict(timeout_ms=300_000, exit_cb=go_status_screen))
+    print("Launch - splash")
+    Screen.change(SplashScreen, kwargs=dict(timeout_ms=3_000, exit_cb=go_status_screen))
