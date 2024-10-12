@@ -9,9 +9,9 @@ import rp2
 )
 def p_clut_b():
     # For each 4 bits, expand to 16
-    out(x, 1) # Get color LSB
+    out(x, 1) # Get color LSB (MSB of nybble)
 
-    out(y, 1) # B 5 bits
+    out(y, 1) # R 5 bits
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
@@ -28,7 +28,7 @@ def p_clut_b():
     in_(y, 1)
     in_(x, 1)
 
-    out(y, 1) # R 5 bits
+    out(y, 1) # B 5 bits
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
