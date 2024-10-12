@@ -73,6 +73,10 @@ class ActivatedDma(Activated):
         self.dma.write = self.write
         return super().__enter__()
 
+    def release(self):
+        self.dma.close()
+
+
 
 class DmaMemClut(ActivatedDma):
     """DMA from memory to clut"""

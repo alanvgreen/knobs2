@@ -13,7 +13,7 @@ from . import ili9341
 
 import asyncio
 import _thread
-from clut_pio import ClutPio
+from clut_pio import ClutPio, DmaMemClut, DmaClutMem, run_activated
 
 
 _lcopy = ili9341._lcopy
@@ -24,7 +24,7 @@ class ILI9341_3(ili9341.ILI9341):
     def __init__(self, spi, *args, **kwargs):
         super().__init__(spi, *args, **kwargs)
         self._do_refresh_done = False
-        self._clut_pio = ClutPio(self._mvb, spi)
+        self._clut_pio = ClutPio()
 
     def show(self):
         clut = ili9341.ILI9341.lut
@@ -40,28 +40,14 @@ class ILI9341_3(ili9341.ILI9341):
         self._wcmd(b"\x2c")  # WRITE_RAM
         self._dc(1)
         self._cs(0)
+        dma_out = DmaClutMem(self._clut_pio, lb)
         for start in range(0, wd * ht, wd):  # For each line
-            #_lcopy(lb, buf[start:], clut, wd)  # Copy and map colors
-            self._clut_pio.manual_write_read(buf[start:], lb, wd)
+            dma_in = DmaMemClut(buf[start:start+wd], self._clut_pio)
+            run_activated(self._clut_pio, dma_in, dma_out)
+            dma_in.release()
             self._spi.write(lb)
-        #self._clut_pio.run()
+        dma_out.release()
         self._cs(1)
-#        
-#        for n in range(0, len(buf), 4):
-#            inp = ((buf[n + 0]) << 0
-#                   +(buf[n + 1]) << 8
-#                   +(buf[n + 2]) << 16
-#                   +(buf[n + 3]) << 24)
-#            self._clut_pio.sm0.put(inp)
-#            b = bytearray(self._clut_pio.sm0.get() for _ in range(16))
-#            self._spi.write(b)
-#
-##            self._spi.write(lb)
-##            lb = self._clut_pio.expand(inp)
-##            self._spi.write(lb)
-#
-#        self._cs(1)
-#        self._dc(0)
 
     async def do_refresh(self, split=4):
         def show_and_signal_done():
