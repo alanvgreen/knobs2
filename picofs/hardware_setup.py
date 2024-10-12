@@ -18,7 +18,7 @@ freq(250_000_000)  # RP2 overclock
 prst = Pin(6, Pin.OUT, value=1)
 pdc = Pin(7, Pin.OUT, value=0)  # Arbitrary pins
 pcs = Pin(5, Pin.OUT, value=1)
-spi = SPI(0, sck=Pin(2), mosi=Pin(3), miso=Pin(4), baudrate=30_000_000)
+spi = SPI(0, sck=Pin(2), mosi=Pin(3), miso=Pin(4), baudrate=40_000_000)
 gc.collect()  # Precaution before instantiating framebuf
 ssd = SSD(spi, pcs, pdc, prst, height=320, width=240, usd=True)  # 320h x 240w
 # ssd = SSD(spi, pcs, pdc, prst, height=240, width=320, usd=False)  # 240x320 default

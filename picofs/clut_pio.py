@@ -107,6 +107,35 @@ class DmaClutMem(ActivatedDma):
         )
         self.dma.config(count=len(mem), ctrl=ctrl_bits)
 
+class DmaClutSpi(ActivatedDma):
+    """DMA from clut to SPI device"""
+
+    def __init__(self, clut, spi, count):
+        super().__init__(clut.sm0, spi)
+
+        ctrl_bits = self.dma.pack_ctrl(
+            inc_read=False,
+            inc_write=False,
+            treq_sel=16, # SPI0 TX
+            size=0, # bytes
+        )
+        self.dma.config(count=count, ctrl=ctrl_bits)
+
+class DmaSpiNull(ActivatedDma):
+    """DMA from SPI to /dev/null"""
+
+    def __init__(self, spi, count):
+        dev_null = bytearray(4)
+        super().__init__(spi, dev_null)
+
+        ctrl_bits = self.dma.pack_ctrl(
+            inc_read=False,
+            inc_write=False,
+            treq_sel=17, # SPI0 RX
+            size=0, # bytes
+        )
+        self.dma.config(count=count, ctrl=ctrl_bits)
+
 def run_activated(ctx_mgr, *rest):
     with ctx_mgr:
         if rest:

@@ -13,25 +13,21 @@ from . import ili9341
 
 import asyncio
 import _thread
-from clut_pio import ClutPio, DmaMemClut, DmaClutMem, run_activated
-
-
-_lcopy = ili9341._lcopy
-
+from clut_pio import ClutPio, DmaMemClut, DmaClutSpi, DmaSpiNull, run_activated
 
 
 class ILI9341_3(ili9341.ILI9341):
     def __init__(self, spi, *args, **kwargs):
         super().__init__(spi, *args, **kwargs)
         self._do_refresh_done = False
-        self._clut_pio = ClutPio()
+        self._clut = ClutPio()
+        self._clut.sm0.active(1)
+        self._dma_in = DmaMemClut(self._mvb, self._clut)
+        self._dma_out = DmaClutSpi(self._clut, self._spi, len(self._mvb) * 4)
+        self._dma_null = DmaSpiNull(self._spi, len(self._mvb) * 4)
 
     def show(self):
-        clut = ili9341.ILI9341.lut
-        wd = self.width // 2
         ht = self.height
-        lb = self._linebuf
-        buf = self._mvb
         if self._spi_init:  # A callback was passed
             self._spi_init(self._spi)  # Bus may be shared
         # Commands needed to start data write
@@ -40,14 +36,23 @@ class ILI9341_3(ili9341.ILI9341):
         self._wcmd(b"\x2c")  # WRITE_RAM
         self._dc(1)
         self._cs(0)
-        dma_out = DmaClutMem(self._clut_pio, lb)
-        for start in range(0, wd * ht, wd):  # For each line
-            dma_in = DmaMemClut(buf[start:start+wd], self._clut_pio)
-            run_activated(self._clut_pio, dma_in, dma_out)
-            dma_in.release()
-            self._spi.write(lb)
-        dma_out.release()
+        # TODO: rework this all in terms of startables
+        with self._dma_null:
+            with self._dma_in:
+                while not self._clut.sm0.rx_fifo():
+                        pass
+                with self._dma_out:
+                    while self._dma_null.active():
+                        pass
+
+#        run_activated(
+#            self._clut,
+#            self._dma_in,
+#            self._dma_out,
+#            self._dma_null,
+#        )
         self._cs(1)
+        self._dc(0)
 
     async def do_refresh(self, split=4):
         def show_and_signal_done():
@@ -61,4 +66,3 @@ class ILI9341_3(ili9341.ILI9341):
                 await asyncio.sleep_ms(10)
 
         asyncio.sleep_ms(100)
-
