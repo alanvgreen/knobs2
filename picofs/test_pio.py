@@ -2,7 +2,7 @@ import random
 import rp2
 from rp2 import PIO
 from machine import Pin
-from clut_pio import p_clut_b, ClutPio, DmaMemClut, DmaClutMem, run_activated
+from clut_pio import p_clut_b
 
 random.seed(0)
 
@@ -155,34 +155,10 @@ def fn_dma_in_out(inp, outp, count):
     sm0.active(0)
 
 
-def fn_fancy_dma_in(inp, outp, count):
-    cp = ClutPio()
-    dma_in = DmaMemClut(inp, cp)
-
-    def do_run():
-        with cp:
-            with dma_in:
-                for i in range(count * 4):
-                    outp[i] = cp.sm0.get()
-    
-    for i in range(5):
-        print(f"run {i}")
-        do_run()
-
-def fn_fancy_dma_in_out(inp, outp, count):
-    cp = ClutPio()
-    dma_in = DmaMemClut(inp, cp)
-    dma_out = DmaClutMem(cp, outp)
-
-    for i in range(5):
-        print(f"run {i}")
-        run_activated(cp, dma_in, dma_out)
 
 def run():
     #run_test_fn(fn_manual)
     #run_test_fn(fn_dma_in)
-    #run_test_fn(fn_fancy_dma_in)
-    #run_test_fn(fn_dma_in_out)
-    run_test_fn(fn_fancy_dma_in_out)
+    run_test_fn(fn_dma_in_out)
     # test_print_mapped()
     # test_print()
