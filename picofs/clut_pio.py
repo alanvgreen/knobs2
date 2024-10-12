@@ -3,12 +3,15 @@ import rp2
 
 @rp2.asm_pio(
     autopull=True,
-    autopush=False,
+    autopush=True,
+    push_thresh=8,
     out_shiftdir=rp2.PIO.SHIFT_LEFT,
     in_shiftdir=rp2.PIO.SHIFT_LEFT,
 )
 def p_clut_b():
     # For each 4 bits, expand to 16
+    # Words (with bytes reversed) in
+    # Bytes out (because that's what SPI expects)
     out(x, 1) # Get color LSB (MSB of nybble)
 
     out(y, 1) # R 5 bits
@@ -22,8 +25,6 @@ def p_clut_b():
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
-    push()
-    #in_(null, 24) # Fill ISR, force push
     in_(x, 1)
     in_(y, 1)
     in_(x, 1)
@@ -34,8 +35,6 @@ def p_clut_b():
     in_(y, 1)
     in_(x, 1)
     in_(y, 1)
-    push()
-    #in_(null, 24) # Fill ISR, force push
 
 
 class ClutPio:

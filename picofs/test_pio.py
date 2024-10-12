@@ -83,9 +83,82 @@ def fn_manual(inp, outp, count):
         base = i * 4
         for j in range(16):
             outp[base + j] = sm0.get()
+    sm0.active(0)
+
+
+def fn_dma_in(inp, outp, count):
+    sm0 = rp2.StateMachine(0, p_clut_b)
+
+    words_in = len(inp) // 4
+    dma_in = rp2.DMA()
+    ctrl_bits = dma_in.pack_ctrl(
+        inc_read=True,
+        inc_write=False,
+        treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
+        bswap=True,  # So least significant byte is left most
+    )
+    dma_in.config(read=inp, write=sm0, count=words_in, ctrl=ctrl_bits)
+
+    def do_run():
+        dma_in.read = inp
+        dma_in.active(1)
+        # pull output
+        for i in range(count * 4):
+            outp[i] = sm0.get()
+        dma_in.active(0)
+    
+    sm0.active(1)
+    for i in range(5):
+        print(f"run {i}")
+        do_run()
+    sm0.active(0)
+
+
+def fn_dma_in_out(inp, outp, count):
+    sm0 = rp2.StateMachine(0, p_clut_b)
+
+    words_in = len(inp) // 4
+    dma_in = rp2.DMA()
+    ctrl_bits = dma_in.pack_ctrl(
+        inc_read=True,
+        inc_write=False,
+        treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
+        bswap=True,  # So least significant byte is left most
+    )
+    dma_in.config(read=inp, write=sm0, count=words_in, ctrl=ctrl_bits)
+
+    bytes_out=len(inp) * 4
+    dma_out = rp2.DMA()
+    ctrl_bits = dma_out.pack_ctrl(
+        inc_read=False,
+        inc_write=True,
+        treq_sel=4, # PIO 0, State machine 0, RX
+        size=0, # bytes
+    )
+    dma_out.config(read=sm0, write=outp, count=bytes_out, ctrl=ctrl_bits)
+
+    def do_run():
+        dma_out.write = outp
+        dma_out.active(1)
+        dma_in.read = inp
+        dma_in.active(1)
+
+        while dma_out.active(): pass
+
+        dma_in.active(0)
+        dma_out.active(0)
+    
+    sm0.active(1)
+    for i in range(5):
+        print(f"run {i}")
+        do_run()
+    sm0.active(0)
+
 
 
 def run():
-    run_test_fn(fn_manual)
+    #run_test_fn(fn_manual)
+    #run_test_fn(fn_dma_in)
+    run_test_fn(fn_dma_in_out)
     # test_print_mapped()
     # test_print()
