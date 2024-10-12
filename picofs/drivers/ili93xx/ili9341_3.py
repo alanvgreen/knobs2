@@ -12,8 +12,27 @@
 from . import ili9341
 
 import asyncio
+import time
 import _thread
 from clut_pio import ClutPio, DmaMemClut, DmaClutSpi, DmaSpiNull
+
+
+FRAMES = 300
+class RateWatcher:
+    """Shows FPS over some number of frames"""
+    def __init__(self):
+        self.c = 0
+        self.t = time.ticks_ms()
+
+    def tick(self):
+        self.c += 1
+        if self.c < FRAMES:
+            return
+        now = time.ticks_ms()
+        hz = (FRAMES * 1000) // (now - self.t)
+        print(f"{hz} fps")
+        self.c = 0
+        self.t = now
 
 
 class ILI9341_3(ili9341.ILI9341):
@@ -24,8 +43,10 @@ class ILI9341_3(ili9341.ILI9341):
         self._dma_in = DmaMemClut(self._mvb, self._clut)
         self._dma_out = DmaClutSpi(self._clut, self._spi, len(self._mvb) * 4)
         self._dma_null = DmaSpiNull(self._spi, len(self._mvb) * 4)
+        self._watcher = RateWatcher()
 
     def show(self):
+        self._watcher.tick()
         ht = self.height
         if self._spi_init:  # A callback was passed
             self._spi_init(self._spi)  # Bus may be shared
@@ -57,6 +78,4 @@ class ILI9341_3(ili9341.ILI9341):
             self._do_refresh_done = False
             _thread.start_new_thread(show_and_signal_done, ())
             while not self._do_refresh_done:
-                await asyncio.sleep_ms(10)
-
-        asyncio.sleep_ms(100)
+                await asyncio.sleep_ms(0)
