@@ -34,6 +34,28 @@ class RateWatcher:
         self.c = 0
         self.t = now
 
+            
+
+class Stamper:
+    def __init__(self):
+        self.s = []
+        self.c = 0
+
+    def begin(self):
+        self.s = self.s[-5:]
+        self.c += 1
+        self.s.append([])
+        self.stamp()
+
+    def stamp(self):
+        self.s[-1].append(time.ticks_ms())
+
+    def end(self):
+        self.stamp()
+        if self.c == 60:
+            for row in self.s:
+                print(', '.join(str(t) for t in row))
+
 
 class ILI9341_3(ili9341.ILI9341):
     def __init__(self, spi, *args, **kwargs):
@@ -44,9 +66,11 @@ class ILI9341_3(ili9341.ILI9341):
         self._dma_out = DmaClutSpi(self._clut, self._spi, len(self._mvb) * 4)
         self._dma_null = DmaSpiNull(self._spi, len(self._mvb) * 4)
         self._watcher = RateWatcher()
+        self._stamper = Stamper()
 
     def show(self):
         self._watcher.tick()
+        self._stamper.begin()
         ht = self.height
         if self._spi_init:  # A callback was passed
             self._spi_init(self._spi)  # Bus may be shared
@@ -56,6 +80,7 @@ class ILI9341_3(ili9341.ILI9341):
         self._wcmd(b"\x2c")  # WRITE_RAM
         self._dc(1)
         self._cs(0)
+        self._stamper.stamp()
 
         # Start CLUT DMA and wait for it to produce output
         self._dma_null.start()
@@ -64,10 +89,13 @@ class ILI9341_3(ili9341.ILI9341):
 
         # Start SPI output
         self._dma_out.start()
+        self._stamper.stamp()
         self._dma_null.wait_until_done()
+        self._stamper.stamp()
 
         self._cs(1)
         self._dc(0)
+        self._stamper.end()
 
     async def do_refresh(self, split=4):
         def show_and_signal_done():
