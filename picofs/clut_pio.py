@@ -38,21 +38,6 @@ def p_clut_b():
     in_(y, 1)
 
 
-class Activated:
-    def __init__(self, wrapped):
-        self.wrapped = wrapped
-
-    def __enter__(self):
-        self.wrapped.active(1)
-        return self
-
-    def __exit__(self, type, value, tb):
-        self.wrapped.active(0)
-
-    def active(self):
-        return self.wrapped.active()
-
-
 class ClutPio:
     """Just the PIO bits"""
 
