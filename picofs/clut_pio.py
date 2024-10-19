@@ -1,53 +1,96 @@
 # A Color Lookup table implemented in a PIO
 import rp2
+import time
+
+from periph import GPIORegisters
 
 
 @rp2.asm_pio(
     autopull=True,
-    autopush=True,
-    push_thresh=8,
     out_shiftdir=rp2.PIO.SHIFT_LEFT,
-    in_shiftdir=rp2.PIO.SHIFT_LEFT,
+    fifo_join=rp2.PIO.JOIN_TX,
+    set_init=rp2.PIO.OUT_LOW,
+    sideset_init=rp2.PIO.OUT_LOW,
 )
 def p_clut_b():
     # For each 4 bits, expand to 16
     # Words (with bytes reversed) in
     # Bytes out (because that's what SPI expects)
-    out(x, 1)  # Get color LSB (MSB of nybble)
 
-    out(y, 1)  # R 5 bits
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
+    # ISR will hold LSB
+    out(isr, 1).side(0)
 
-    out(y, 1)  # G 6 bits
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-    in_(x, 1)
+    # Red
+    out(y, 1).side(0)
+    set(x, 2).side(0)
 
-    out(y, 1)  # B 5 bits
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
-    in_(x, 1)
-    in_(y, 1)
+    label("R")
+    mov(pins, y).side(0)
+    nop().side(1)
+    mov(pins, isr).side(0)
+    jmp(x_dec, "R").side(1)
+    mov(pins, y).side(0)
+
+    # Green
+    out(y, 1).side(1)
+    set(x, 2).side(0)
+
+    label("G")
+    mov(pins, y).side(0)
+    nop().side(1)
+    mov(pins, isr).side(0)
+    jmp(x_dec, "G").side(1)
+
+    # Blue
+    out(y, 1).side(0)
+    set(x, 2).side(0)
+
+    label("B")
+    mov(pins, y).side(0)
+    nop().side(1)
+    mov(pins, isr).side(0)
+    jmp(x_dec, "B").side(1)
+    mov(pins, y).side(0)
+    nop().side(1) # Wasted?
 
 
 class ClutPio:
     """Just the PIO bits"""
 
+    # TODO:
+    # - set frequency to 80Mhz or so
+    # - Data out, clock low then Raise clock to toggle data out
+    # - Functions to connect / disconnect data out and side set to PIO
+
     def __init__(self):
-        self.sm0 = rp2.StateMachine(0, p_clut_b)
+        regs = GPIORegisters()
+        self.set_pins_spi = (regs.save_ctrl(2), regs.save_ctrl(3))
+        self.sm0 = rp2.StateMachine(
+            0,
+            prog=p_clut_b,
+            freq=40_000_000,
+            set_base=3,  # MOSI
+            sideset_base=2,  # SCK
+        )
+        self.set_pins_pio0 = (regs.save_ctrl(2), regs.save_ctrl(3))
+        for s in self.set_pins_spi:
+            s()
+
+    def activate(self):
+        for p in self.set_pins_pio0:
+            p()
         self.sm0.active(1)
 
-    def wait_for_output(self):
-        while not self.sm0.rx_fifo():
+    def deactivate(self):
+        self.sm0.active(0)
+        for s in self.set_pins_spi:
+            s()
+
+    def wait_until_done(self):
+        # wait for the tx fifo to drain
+        while self.sm0.tx_fifo(): 
             pass
+        time.sleep_us(1)
 
 
 class RestartableDma:
@@ -79,33 +122,3 @@ class DmaMemClut(RestartableDma):
             bswap=True,  # So least significant byte is left most
         )
         self.dma.config(count=len(mem) // 4, ctrl=ctrl_bits)
-
-
-class DmaClutSpi(RestartableDma):
-    """DMA from clut to SPI device"""
-
-    def __init__(self, clut, spi, count):
-        super().__init__(clut.sm0, spi)
-
-        ctrl_bits = self.dma.pack_ctrl(
-            inc_read=False,
-            inc_write=False,
-            treq_sel=16, # SPI0 TX
-            size=0, # bytes
-        )
-        self.dma.config(count=count, ctrl=ctrl_bits)
-
-class DmaSpiNull(RestartableDma):
-    """DMA from SPI to /dev/null"""
-
-    def __init__(self, spi, count):
-        dev_null = bytearray(4)
-        super().__init__(spi, dev_null)
-
-        ctrl_bits = self.dma.pack_ctrl(
-            inc_read=False,
-            inc_write=False,
-            treq_sel=17, # SPI0 RX
-            size=0, # bytes
-        )
-        self.dma.config(count=count, ctrl=ctrl_bits)

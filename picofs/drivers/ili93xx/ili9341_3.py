@@ -14,7 +14,7 @@ from . import ili9341
 import asyncio
 import time
 import _thread
-from clut_pio import ClutPio, DmaMemClut, DmaClutSpi, DmaSpiNull
+from clut_pio import ClutPio, DmaMemClut
 
 
 FRAMES = 300
@@ -63,8 +63,6 @@ class ILI9341_3(ili9341.ILI9341):
         self._do_refresh_done = False
         self._clut = ClutPio()
         self._dma_in = DmaMemClut(self._mvb, self._clut)
-        self._dma_out = DmaClutSpi(self._clut, self._spi, len(self._mvb) * 4)
-        self._dma_null = DmaSpiNull(self._spi, len(self._mvb) * 4)
         self._watcher = RateWatcher()
         self._stamper = Stamper()
 
@@ -83,15 +81,12 @@ class ILI9341_3(ili9341.ILI9341):
         self._stamper.stamp()
 
         # Start CLUT DMA and wait for it to produce output
-        self._dma_null.start()
+        self._clut.activate()
         self._dma_in.start()
-        self._clut.wait_for_output()
+        self._dma_in.wait_until_done()
 
-        # Start SPI output
-        self._dma_out.start()
-        self._stamper.stamp()
-        self._dma_null.wait_until_done()
-        self._stamper.stamp()
+        self._clut.wait_until_done()
+        self._clut.deactivate()
 
         self._cs(1)
         self._dc(0)
