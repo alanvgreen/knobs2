@@ -4,7 +4,10 @@ from machine import mem32
 
 
 class PeripheralRegisters:
-    """An APB Peripheral"""
+    """An APB Peripheral
+
+    See RP2040 refence manual section "2.1.2 Atomic Register Access"
+    """
     def __init__(self, base_address):
         self._base = base_address
 
@@ -22,6 +25,17 @@ class PeripheralRegisters:
     
     def bclr(self, idx, mask):
         mem32[self._base + idx + 0x3000] = mask
+
+
+IO_BANK0_BASE = 0x40014000
+
+class GPIORegisters(PeripheralRegisters):
+    def __init__(self):
+        return super().__init__(IO_BANK0_BASE)
+
+    def save_ctrl(self, pin):
+        curr = self.get(pin * 8 + 4)
+        return lambda: self.set(pin * 8 + 4, curr)
 
 
 ADC_BASE = 0x4004c000
