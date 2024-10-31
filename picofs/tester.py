@@ -5,7 +5,8 @@ from rp2 import DMA
 from uctypes import addressof
 from periph import ADCRegisters
 
-import test_pio
+#import test_pio
+import test_pio2
 
 BLEN = 64
 
@@ -183,7 +184,7 @@ def test_clut():
 def run():
     print("hello")
     #test_clut()
-    test_pio.run()
+    test_pio2.run()
     #buf_to_buf()
     #adc_to_buf()
     #adc_to_sum()

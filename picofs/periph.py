@@ -27,15 +27,24 @@ class PeripheralRegisters:
         mem32[self._base + idx + 0x3000] = mask
 
 
+
 IO_BANK0_BASE = 0x40014000
 
 class GPIORegisters(PeripheralRegisters):
     def __init__(self):
         return super().__init__(IO_BANK0_BASE)
 
-    def save_ctrl(self, pin):
-        curr = self.get(pin * 8 + 4)
-        return lambda: self.set(pin * 8 + 4, curr)
+    def save_ctrl(self, *pins):
+        saved_vals = []
+        for p in pins:
+            idx = p * 8 +4
+            saved_vals.append((idx, self.get(idx)))
+
+        def reset_saved():
+            for idx, val in saved_vals:
+                self.set(idx, val)
+
+        return reset_saved
 
 
 ADC_BASE = 0x4004c000

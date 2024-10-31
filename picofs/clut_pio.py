@@ -1,15 +1,20 @@
 # A Color Lookup table implemented in a PIO
 import rp2
 import time
+from machine import Pin, freq
 
 from periph import GPIORegisters
+
+
+# SCK clock is default low.
+# data is clocked on transition from low to high
 
 
 @rp2.asm_pio(
     autopull=True,
     out_shiftdir=rp2.PIO.SHIFT_LEFT,
     fifo_join=rp2.PIO.JOIN_TX,
-    set_init=rp2.PIO.OUT_LOW,
+    out_init=rp2.PIO.OUT_LOW,
     sideset_init=rp2.PIO.OUT_LOW,
 )
 def p_clut_b():
@@ -21,7 +26,7 @@ def p_clut_b():
     out(isr, 1).side(0)
 
     # Red
-    out(y, 1).side(0)
+    out(y, 1).side(0)   # Y holds Red MSB
     set(x, 2).side(0)
 
     label("R")
@@ -53,6 +58,32 @@ def p_clut_b():
     mov(pins, y).side(0)
     nop().side(1) # Wasted?
 
+@rp2.asm_pio(
+    autopull=True,
+    out_shiftdir=rp2.PIO.SHIFT_LEFT,
+    fifo_join=rp2.PIO.JOIN_TX,
+    set_init=rp2.PIO.OUT_LOW, # COPI
+    sideset_init=rp2.PIO.OUT_LOW, # CLK
+)
+def p_green_b():
+    # Uses set instead of move
+    out(x, 4).side(0) # consume 4 bits of color
+
+    set(x, 5).side(0)
+    label("R")
+    set(pins, 0).side(0)
+    jmp(x_dec, "R").side(1)
+
+    set(x, 6).side(0)
+    label("G")
+    set(pins, 1).side(0)
+    jmp(x_dec, "G").side(1)
+
+    set(x, 5).side(0)
+    label("B")
+    set(pins, 0).side(0)
+    jmp(x_dec, "B").side(1)
+
 
 class ClutPio:
     """Just the PIO bits"""
@@ -64,27 +95,27 @@ class ClutPio:
 
     def __init__(self):
         regs = GPIORegisters()
-        self.set_pins_spi = (regs.save_ctrl(2), regs.save_ctrl(3))
+        self.set_pins_spi = regs.save_ctrl(2, 3)
         self.sm0 = rp2.StateMachine(
             0,
-            prog=p_clut_b,
-            freq=40_000_000,
-            set_base=3,  # MOSI
-            sideset_base=2,  # SCK
+            #prog=p_clut_b,
+            prog=p_green_b,
+            #freq=freq(),
+            freq=20_000_000,
+            out_base=Pin(3),  # COPI
+            set_base=Pin(3),  # COPI
+            sideset_base=Pin(2),  # SCK
         )
-        self.set_pins_pio0 = (regs.save_ctrl(2), regs.save_ctrl(3))
-        for s in self.set_pins_spi:
-            s()
+        self.set_pins_pio0 = regs.save_ctrl(2, 3)
+        self.set_pins_spi()
 
     def activate(self):
-        for p in self.set_pins_pio0:
-            p()
+        self.set_pins_pio0()
         self.sm0.active(1)
 
     def deactivate(self):
         self.sm0.active(0)
-        for s in self.set_pins_spi:
-            s()
+        self.set_pins_spi()
 
     def wait_until_done(self):
         # wait for the tx fifo to drain
@@ -119,6 +150,5 @@ class DmaMemClut(RestartableDma):
             inc_read=True,
             inc_write=False,
             treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
-            bswap=True,  # So least significant byte is left most
         )
         self.dma.config(count=len(mem) // 4, ctrl=ctrl_bits)

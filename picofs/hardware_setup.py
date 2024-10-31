@@ -13,7 +13,8 @@ import gc
 #from drivers.ili93xx.ili9341_2 import ILI9341_2 as SSD
 from drivers.ili93xx.ili9341_3 import ILI9341_3 as SSD
 
-freq(250_000_000)  # RP2 overclock
+#freq(250_000_000)  # RP2 overclock
+#freq(160_000_000)  # RP2 overclock
 # Create and export an SSD instance
 prst = Pin(6, Pin.OUT, value=1)
 pdc = Pin(7, Pin.OUT, value=0)  # Arbitrary pins
