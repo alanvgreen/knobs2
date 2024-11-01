@@ -38,7 +38,7 @@ def p_clut_b():
 
     # Green
     out(y, 1).side(1)
-    set(x, 2).side(0) # 3 times around this loop
+    set(x, 1).side(0) # 2 times around this loop
 
     label("G")
     mov(pins, y).side(0)
@@ -46,9 +46,13 @@ def p_clut_b():
     mov(pins, isr).side(0)
     jmp(x_dec, "G").side(1)
 
+    # Overlap fetching Blue data with end of green
+    mov(pins, y).side(0) # Blue MSB to pins
+    out(y, 1).side(1) # Fetch Green MSB to Y
+    mov(pins, isr).side(0) # Set final Green LSB
+
     # Blue
-    out(y, 1).side(0)
-    set(x, 1).side(0) # 2 loops for blue
+    set(x, 1).side(1) # 2 loops for blue
 
     label("B")
     mov(pins, y).side(0)
@@ -57,32 +61,6 @@ def p_clut_b():
     jmp(x_dec, "B").side(1)
     mov(pins, y).side(0)
     nop().side(1) # Wasted?
-
-@rp2.asm_pio(
-    autopull=True,
-    out_shiftdir=rp2.PIO.SHIFT_LEFT,
-    fifo_join=rp2.PIO.JOIN_TX,
-    set_init=rp2.PIO.OUT_LOW, # COPI
-    sideset_init=rp2.PIO.OUT_LOW, # CLK
-)
-def p_green_b():
-    # Uses set instead of move
-    out(x, 4).side(0) # consume 4 bits of color
-
-    set(x, 4).side(0)
-    label("R")
-    set(pins, 0).side(0)
-    jmp(x_dec, "R").side(1)
-
-    set(x, 5).side(0)
-    label("G")
-    set(pins, 1).side(0)
-    jmp(x_dec, "G").side(1)
-
-    set(x, 4).side(0)
-    label("B")
-    set(pins, 0).side(0)
-    jmp(x_dec, "B").side(1)
 
 
 class ClutPio:
@@ -99,9 +77,7 @@ class ClutPio:
         self.sm0 = rp2.StateMachine(
             0,
             prog=p_clut_b,
-            #prog=p_green_b,
             freq=freq(),
-            #freq=20_000_000,
             out_base=Pin(3),  # COPI
             set_base=Pin(3),  # COPI
             sideset_base=Pin(2),  # SCK
