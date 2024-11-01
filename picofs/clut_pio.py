@@ -25,6 +25,8 @@ def p_clut_b():
     # ISR will hold LSB
     out(isr, 1).side(0)
 
+    wrap_target()
+
     # Red
     out(y, 1).side(0)   # Y holds Red MSB
     set(x, 1).side(0)   # 2 loops for red
@@ -60,7 +62,8 @@ def p_clut_b():
     mov(pins, isr).side(0)
     jmp(x_dec, "B").side(1)
     mov(pins, y).side(0)
-    nop().side(1) # Wasted?
+    out(isr, 1).side(1) # fetch LSB
+    wrap()
 
 
 class ClutPio:
@@ -86,6 +89,7 @@ class ClutPio:
         self.set_pins_spi()
 
     def activate(self):
+        self.sm0.restart() # Ensure SCK starts low
         self.set_pins_pio0()
         self.sm0.active(1)
 
