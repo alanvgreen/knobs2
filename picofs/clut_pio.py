@@ -27,7 +27,7 @@ def p_clut_b():
 
     # Red
     out(y, 1).side(0)   # Y holds Red MSB
-    set(x, 2).side(0)
+    set(x, 1).side(0)   # 2 loops for red
 
     label("R")
     mov(pins, y).side(0)
@@ -38,7 +38,7 @@ def p_clut_b():
 
     # Green
     out(y, 1).side(1)
-    set(x, 2).side(0)
+    set(x, 2).side(0) # 3 times around this loop
 
     label("G")
     mov(pins, y).side(0)
@@ -48,7 +48,7 @@ def p_clut_b():
 
     # Blue
     out(y, 1).side(0)
-    set(x, 2).side(0)
+    set(x, 1).side(0) # 2 loops for blue
 
     label("B")
     mov(pins, y).side(0)
@@ -69,17 +69,17 @@ def p_green_b():
     # Uses set instead of move
     out(x, 4).side(0) # consume 4 bits of color
 
-    set(x, 5).side(0)
+    set(x, 4).side(0)
     label("R")
     set(pins, 0).side(0)
     jmp(x_dec, "R").side(1)
 
-    set(x, 6).side(0)
+    set(x, 5).side(0)
     label("G")
     set(pins, 1).side(0)
     jmp(x_dec, "G").side(1)
 
-    set(x, 5).side(0)
+    set(x, 4).side(0)
     label("B")
     set(pins, 0).side(0)
     jmp(x_dec, "B").side(1)
@@ -98,10 +98,10 @@ class ClutPio:
         self.set_pins_spi = regs.save_ctrl(2, 3)
         self.sm0 = rp2.StateMachine(
             0,
-            #prog=p_clut_b,
-            prog=p_green_b,
-            #freq=freq(),
-            freq=20_000_000,
+            prog=p_clut_b,
+            #prog=p_green_b,
+            freq=freq(),
+            #freq=20_000_000,
             out_base=Pin(3),  # COPI
             set_base=Pin(3),  # COPI
             sideset_base=Pin(2),  # SCK
@@ -150,5 +150,6 @@ class DmaMemClut(RestartableDma):
             inc_read=True,
             inc_write=False,
             treq_sel=0,  # PIO 0, State machine 0, TX (input of PIO)
+            bswap=True,
         )
         self.dma.config(count=len(mem) // 4, ctrl=ctrl_bits)
