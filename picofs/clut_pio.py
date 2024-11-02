@@ -18,55 +18,58 @@ from periph import GPIORegisters
     sideset_init=rp2.PIO.OUT_LOW,
 )
 def p_clut_b():
+    # fmt: off
+
     # For each 4 bits, expand to 16
     # Words (with bytes reversed) in
     # Bytes out (because that's what SPI expects)
 
-    # ISR will hold LSB
-    out(isr, 1).side(0)
+    out(isr, 1)             .side(0)   # ISR holds LSB
+    out(y, 1)               .side(0)   # Y holds Red MSB
 
     wrap_target()
 
     # Red
-    out(y, 1).side(0)   # Y holds Red MSB
-    mov(pins, y).side(0)
-    nop().side(1)
-    mov(pins, isr).side(0)
-    nop().side(1)
-    mov(pins, y).side(0)
-    nop().side(1)
-    mov(pins, isr).side(0)
-    set(x, 1).side(1) # 2 times around Green loop
-    mov(pins, y).side(0) # final Red MSB
-
-
+    mov(pins, y)            .side(0)
+    nop()                   .side(1)
+    mov(pins, isr)          .side(0)
+    nop()                   .side(1)
+    mov(pins, y)            .side(0)
+    nop()                   .side(1)
+    mov(pins, isr)          .side(0)
+    set(x, 1)               .side(1) # 2 times around Green loop
+    mov(pins, y)            .side(0) # final Red MSB
 
     # Green
-    out(y, 1).side(1)
-    #set(x, 1).side(0) # 2 times around this loop
-
+    out(y, 1)               .side(1) # Get green MSB
     label("G")
-    mov(pins, y).side(0)
-    nop().side(1)
-    mov(pins, isr).side(0)
-    jmp(x_dec, "G").side(1)
+    mov(pins, y)            .side(0)
+    nop()                   .side(1)
+    mov(pins, isr)          .side(0)
+    jmp(x_dec, "G")         .side(1)
 
     # Overlap fetching Blue data with end of green
-    mov(pins, y).side(0) # Blue MSB to pins
-    out(y, 1).side(1) # Fetch Green MSB to Y
-    mov(pins, isr).side(0) # Set final Green LSB
+    mov(pins, y)            .side(0) # Blue MSB to pins
+    out(x, 1)               .side(1) # Fetch Green MSB to X
+    mov(pins, isr)          .side(0) # Set final Green LSB
 
     # Blue
-    set(x, 1).side(1) # 2 loops for blue
+    nop()                   .side(1)
+    #set(x, 1)               .side(1) # 2 loops for blue
 
-    label("B")
-    mov(pins, y).side(0)
-    nop().side(1)
-    mov(pins, isr).side(0)
-    jmp(x_dec, "B").side(1)
-    mov(pins, y).side(0)
-    out(isr, 1).side(1) # fetch LSB
+    mov(pins, x)            .side(0)
+    nop()                   .side(1)
+    mov(pins, isr)          .side(0)
+    nop()                   .side(1)
+    mov(pins, x)            .side(0)
+    nop()                   .side(1)
+    mov(pins, isr)          .side(0)
+    out(isr, 1)             .side(1) # fetch next LSB
+    mov(pins, x)            .side(0)
+    out(y, 1)               .side(1) # Y holds Red MSB
+
     wrap()
+    # fmt: on
 
 
 class ClutPio:
