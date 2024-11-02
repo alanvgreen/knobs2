@@ -23,15 +23,15 @@ def p_clut_b():
     # For each 4 bits, expand to 16
     # Words (with bytes reversed) in
     # Bytes out (because that's what SPI expects)
+    # Color format is RLGB - red, LSB, green, blue
 
-    out(isr, 1)             .side(0)   # ISR holds LSB
     out(y, 1)               .side(0)   # Y holds Red MSB
 
     wrap_target()
 
     # Red
     mov(pins, y)            .side(0)
-    nop()                   .side(1)
+    out(isr, 1)             .side(1)   # ISR holds LSB
     mov(pins, isr)          .side(0)
     nop()                   .side(1)
     mov(pins, y)            .side(0)
@@ -43,29 +43,27 @@ def p_clut_b():
     # Green
     out(y, 1)               .side(1) # Get green MSB
     label("G")
-    mov(pins, y)            .side(0)
+    mov(pins, y)            .side(0) # Green MSB
     nop()                   .side(1)
-    mov(pins, isr)          .side(0)
+    mov(pins, isr)          .side(0) # LSB
     jmp(x_dec, "G")         .side(1)
 
     # Overlap fetching Blue data with end of green
-    mov(pins, y)            .side(0) # Blue MSB to pins
-    out(x, 1)               .side(1) # Fetch Green MSB to X
+    mov(pins, y)            .side(0) # Final Green MSB to pins
+    out(y, 1)               .side(1) # Fetch Green MSB to Y
     mov(pins, isr)          .side(0) # Set final Green LSB
 
     # Blue
     nop()                   .side(1)
-    #set(x, 1)               .side(1) # 2 loops for blue
-
-    mov(pins, x)            .side(0)
+    mov(pins, y)            .side(0)
     nop()                   .side(1)
     mov(pins, isr)          .side(0)
     nop()                   .side(1)
-    mov(pins, x)            .side(0)
+    mov(pins, y)            .side(0)
     nop()                   .side(1)
     mov(pins, isr)          .side(0)
-    out(isr, 1)             .side(1) # fetch next LSB
-    mov(pins, x)            .side(0)
+    nop()                   .side(1)
+    mov(pins, y)            .side(0)
     out(y, 1)               .side(1) # Y holds Red MSB
 
     wrap()
@@ -95,7 +93,7 @@ class ClutPio:
         self.set_pins_spi()
 
     def activate(self):
-        self.sm0.restart() # Ensure SCK starts low
+        self.sm0.restart()  # Ensure SCK starts low
         self.set_pins_pio0()
         self.sm0.active(1)
 
@@ -105,7 +103,7 @@ class ClutPio:
 
     def wait_until_done(self):
         # wait for the tx fifo to drain
-        while self.sm0.tx_fifo(): 
+        while self.sm0.tx_fifo():
             pass
         time.sleep_us(1)
 

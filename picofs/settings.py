@@ -11,9 +11,10 @@ import myfonts.poppins_semi_18 as label_font
 import myfonts.poppins_bold_30 as title_font
 
 LIST_SIXTEEN = [str(i + 1) for i in range(16)]
-# LIST_SIXTEEN = ["1", "2", "3"]
 
+from color_screen import ColorScreen
 from colors import GREEN, YELLOW, WHITE, BLACK, RED
+
 
 class ChannelButton(Button):
     # Kind of a radio button
@@ -47,10 +48,20 @@ class SettingsScreen(Screen):
     def __init__(self):
         super().__init__()
         title_wri = CWriter(ssd, title_font, WHITE, BLACK, verbose=False)
-        Label(title_wri, 10, 0, text=210, justify=1).value("Channels")
+        Label(title_wri, row=10, col=60, text="Channels")
 
         label_wri = CWriter(ssd, label_font, GREEN, BLACK, verbose=False)
         CloseButton(label_wri, bgcolor=BLACK, callback=self._on_close)
+        Button(
+            label_wri,
+            row=4,
+            col=4,
+            height=30,
+            width=30,
+            callback=(lambda _: Screen.change(ColorScreen)),
+            text="C",
+            bgcolor=BLACK,
+        )
 
         self._groups = []
         value_wri = CWriter(ssd, font, WHITE, BLACK, verbose=False)

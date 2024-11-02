@@ -1,8 +1,8 @@
 
 # Color format is LSB, red, green, blue
 
-RED    = 0b_0100
-GREEN  = 0b_1010
+RED    = 0b_1000
+GREEN  = 0b_0110
 BLUE   = 0b_0001
 
 YELLOW = 0b_1110
