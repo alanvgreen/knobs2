@@ -29,18 +29,21 @@ def p_clut_b():
 
     # Red
     out(y, 1).side(0)   # Y holds Red MSB
-    set(x, 1).side(0)   # 2 loops for red
-
-    label("R")
     mov(pins, y).side(0)
     nop().side(1)
     mov(pins, isr).side(0)
-    jmp(x_dec, "R").side(1)
+    nop().side(1)
     mov(pins, y).side(0)
+    nop().side(1)
+    mov(pins, isr).side(0)
+    set(x, 1).side(1) # 2 times around Green loop
+    mov(pins, y).side(0) # final Red MSB
+
+
 
     # Green
     out(y, 1).side(1)
-    set(x, 1).side(0) # 2 times around this loop
+    #set(x, 1).side(0) # 2 times around this loop
 
     label("G")
     mov(pins, y).side(0)
